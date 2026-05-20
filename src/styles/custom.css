@@ -1,0 +1,106 @@
+:root {
+  --sl-color-accent-low: #d8f4ec;
+  --sl-color-accent: #007f6d;
+  --sl-color-accent-high: #003f36;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #f6f3ee;
+  --sl-color-gray-2: #ebe7df;
+  --sl-color-gray-3: #cfc8bd;
+  --sl-color-gray-4: #90887b;
+  --sl-color-gray-5: #5f584e;
+  --sl-color-gray-6: #36322d;
+  --sl-color-black: #151412;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #123d36;
+  --sl-color-accent: #59d9bf;
+  --sl-color-accent-high: #cbfff1;
+  --sl-color-white: #f7f2ea;
+  --sl-color-gray-1: #e7ded1;
+  --sl-color-gray-2: #c7beb1;
+  --sl-color-gray-3: #938b80;
+  --sl-color-gray-4: #5f574e;
+  --sl-color-gray-5: #3e3933;
+  --sl-color-gray-6: #292520;
+  --sl-color-black: #151412;
+}
+
+body {
+  letter-spacing: 0;
+}
+
+.site-title {
+  font-weight: 760;
+}
+
+.content-panel {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--sl-color-bg) 92%, var(--sl-color-accent-low));
+}
+
+.chapter-meta {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  margin: 1.25rem 0;
+}
+
+.chapter-meta > div {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+  padding: 0.8rem 0.9rem;
+  background: var(--sl-color-bg-nav);
+}
+
+.chapter-meta strong {
+  display: block;
+  color: var(--sl-color-white);
+  font-size: 0.82rem;
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+}
+
+.source-list {
+  columns: 2 18rem;
+  column-gap: 2rem;
+  font-size: 0.92rem;
+}
+
+.source-list li {
+  break-inside: avoid;
+}
+
+.agent-flow {
+  margin: 1.5rem 0;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+  background: var(--sl-color-bg-nav);
+}
+
+.agent-flow img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 999px;
+  padding: 0 0.65rem;
+  font-size: 0.82rem;
+  color: var(--sl-color-white);
+  background: var(--sl-color-bg-nav);
+}
+
+@media (max-width: 44rem) {
+  .chapter-meta {
+    grid-template-columns: 1fr;
+  }
+}

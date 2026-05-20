@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Publish this static study site by committing to GitHub. Cloudflare Pages then
-# deploys automatically from the GitHub main branch.
+# Publish this compiled study site by committing to GitHub. Cloudflare Pages then
+# builds and deploys automatically from the GitHub main branch.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SITE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -17,6 +17,7 @@ PAGES_URL="${PAGES_URL:-https://opencode-study.korah-group.top}"
 INIT_REPO=0
 ALLOW_EMPTY=0
 DRY_RUN=0
+SKIP_BUILD=0
 VISIBILITY="public"
 COMMIT_MESSAGE=""
 
@@ -37,6 +38,7 @@ Options:
   --init-repo       Initialize git if needed, create the GitHub repo if missing,
                     and configure the remote.
   --allow-empty     Create an empty commit when there are no file changes.
+  --skip-build      Do not run the local Starlight build before committing.
   --dry-run         Print the commands without changing anything.
   --private         Create the GitHub repo as private when using --init-repo.
   --public          Create the GitHub repo as public when using --init-repo.
@@ -86,6 +88,10 @@ while [[ $# -gt 0 ]]; do
       DRY_RUN=1
       shift
       ;;
+    --skip-build)
+      SKIP_BUILD=1
+      shift
+      ;;
     --private)
       VISIBILITY="private"
       shift
@@ -117,6 +123,11 @@ done
 
 need_cmd git
 cd "${SITE_DIR}"
+
+if [[ "${SKIP_BUILD}" == "0" && -f package.json ]]; then
+  need_cmd pnpm
+  run pnpm run build
+fi
 
 if [[ ! -d .git ]]; then
   [[ "${INIT_REPO}" == "1" ]] || die "This directory is not a git repo. Re-run with --init-repo if this is the first publish."

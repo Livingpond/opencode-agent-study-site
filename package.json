@@ -1,0 +1,26 @@
+{
+  "name": "opencode-agent-study-site",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.1.3",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "sync": "node scripts/sync-starlight-content.mjs",
+    "validate:agent-docs": "node scripts/validate-agent-docs.mjs",
+    "validate:sources": "CHECK_SOURCE_FILES=1 node scripts/validate-agent-docs.mjs",
+    "dev": "node scripts/sync-starlight-content.mjs && astro dev",
+    "build": "node scripts/validate-agent-docs.mjs && node scripts/sync-starlight-content.mjs && astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.39.2",
+    "astro": "^6.3.6"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "typescript": "^5.9.3"
+  }
+}
