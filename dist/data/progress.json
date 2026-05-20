@@ -1,0 +1,79 @@
+{
+  "totalPlannedChapters": 14,
+  "completedChapters": [
+    "01-cli-startup",
+    "02-session-message",
+    "03-agent-core-loop",
+    "04-llm-provider",
+    "05-tool-calling",
+    "06-file-editing",
+    "07-shell-execution",
+    "08-lsp-diagnostics",
+    "09-permission-security",
+    "11-ui-tui-desktop-ide",
+    "12-sdk-api-extension",
+    "13-testing-engineering",
+    "14-mini-coding-agent"
+  ],
+  "currentBatch": 6,
+  "lastQualityCheck": "batch-6",
+  "batches": [
+    {
+      "id": "batch-1",
+      "chapters": [
+        "01-cli-startup",
+        "02-session-message"
+      ],
+      "status": "complete",
+      "notes": "完成 CLI / 启动入口、用户输入与会话。两章均重新阅读源码，并生成 Markdown 与 HTML。"
+    },
+    {
+      "id": "batch-2",
+      "chapters": [
+        "05-tool-calling",
+        "06-file-editing"
+      ],
+      "status": "complete",
+      "notes": "完成 Tool 调用系统、文件读写与代码修改。重读 tool wrapper、registry、session tools、plugin tool、read/edit/write、external directory、LSP diagnostics。"
+    },
+    {
+      "id": "batch-3",
+      "chapters": [
+        "07-shell-execution",
+        "04-llm-provider"
+      ],
+      "status": "complete",
+      "notes": "完成 Shell / 命令执行、模型 Provider / LLM 调用。重读 shell parse/collect/ask/run、direct shell session path、SessionRunState、LLM.stream、AI SDK adapter、Provider SDK loader、ProviderTransform。"
+    },
+    {
+      "id": "batch-4",
+      "chapters": [
+        "09-permission-security",
+        "08-lsp-diagnostics"
+      ],
+      "status": "complete",
+      "notes": "完成 权限、审批、安全边界 与 LSP / 诊断 / 上下文增强。重读 permission rule/evaluate/ask/reply、agent 默认权限、CLI 审批处理、LSP server/client/touchFile/diagnostics、edit/write/lsp tool 交界。"
+    },
+    {
+      "id": "batch-5",
+      "chapters": [
+        "11-ui-tui-desktop-ide",
+        "12-sdk-api-extension"
+      ],
+      "status": "complete",
+      "notes": "完成 UI / TUI / Desktop / IDE 与 SDK / API / 对外扩展点。重读 interactive runtime、TUI SDK/SSE/sync、Web app provider tree、desktop sidecar、VS Code extension、HTTP API composition、SSE event handler、JS SDK client/server、plugin hooks。"
+    },
+    {
+      "id": "batch-6",
+      "chapters": [
+        "13-testing-engineering",
+        "14-mini-coding-agent"
+      ],
+      "status": "complete",
+      "notes": "完成 测试与工程化 与 从 OpenCode 反推 mini coding agent。重读根 workspace/catalog、turbo task graph、bunfig root test guard、AGENTS 测试规范、package-level scripts、真实 test 文件、SDK/build 脚本，并回看 CLI -> prompt -> runLoop -> LLM -> tools -> permission -> processor -> event 的最小 agent 链路。"
+    }
+  ],
+  "remainingChapters": [
+    "10-config-system"
+  ]
+}

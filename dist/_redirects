@@ -1,0 +1,16 @@
+# Preserve old hand-written HTML chapter URLs.
+/chapters/01-cli-startup.html /chapters/01-cli-startup/ 301
+/chapters/02-session-message.html /chapters/02-session-message/ 301
+/chapters/03-agent-core-loop.html /chapters/03-agent-core-loop/ 301
+/chapters/04-llm-provider.html /chapters/04-llm-provider/ 301
+/chapters/05-tool-calling.html /chapters/05-tool-calling/ 301
+/chapters/06-file-editing.html /chapters/06-file-editing/ 301
+/chapters/07-shell-execution.html /chapters/07-shell-execution/ 301
+/chapters/08-lsp-diagnostics.html /chapters/08-lsp-diagnostics/ 301
+/chapters/09-permission-security.html /chapters/09-permission-security/ 301
+/chapters/10-config-system.html /chapters/10-config-system/ 301
+/chapters/11-ui-tui-desktop-ide.html /chapters/11-ui-tui-desktop-ide/ 301
+/chapters/12-sdk-api-extension.html /chapters/12-sdk-api-extension/ 301
+/chapters/13-testing-engineering.html /chapters/13-testing-engineering/ 301
+/chapters/14-mini-coding-agent.html /chapters/14-mini-coding-agent/ 301
+/index.html / 301

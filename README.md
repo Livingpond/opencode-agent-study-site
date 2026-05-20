@@ -8,6 +8,7 @@ Agent-native documentation site for studying the OpenCode source code.
 - Static HTML output in `dist`
 - Pagefind search generated at build time
 - Cloudflare Pages publish directory: `dist`
+- `dist` is committed as a generated artifact for compatibility with the current Cloudflare Pages project.
 
 ## Agent Source Files
 
@@ -17,7 +18,7 @@ Agent-native documentation site for studying the OpenCode source code.
 - `data/source-map.json` maps chapters to OpenCode source evidence.
 - `AGENTS.md` is the writing contract for future Codex agents.
 
-Generated files under `src/content/docs/chapters/` are synced from `markdown/` and `data/`.
+Generated files under `src/content/docs/chapters/` and `dist/` are synced from `markdown/` and `data/`.
 
 ## Commands
 

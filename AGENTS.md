@@ -10,8 +10,9 @@ This repository is an agent-native documentation system for the OpenCode source 
 - Optional evidence map: `data/source-map.json`.
 - Generated Starlight pages: `src/content/docs/index.md` and `src/content/docs/chapters/*.md`.
 - Static public copies: `public/data/*` and `public/markdown/*`.
+- Compiled publish artifact: `dist/`.
 
-Do not hand-edit generated chapter pages under `src/content/docs/chapters/`. Edit `markdown/` and `data/`, then run `pnpm run sync`.
+Do not hand-edit generated chapter pages under `src/content/docs/chapters/` or files under `dist/`. Edit `markdown/` and `data/`, then run `pnpm run build`.
 
 ## Required Workflow
 
@@ -21,7 +22,7 @@ Do not hand-edit generated chapter pages under `src/content/docs/chapters/`. Edi
 4. Update `data/progress.json` if chapter status changes.
 5. Run `pnpm run build`.
 6. If checking local source references is needed, run `pnpm run validate:sources`.
-7. Commit source files, generated Starlight content, and lockfile changes together.
+7. Commit source files, generated Starlight content, `dist/`, and lockfile changes together.
 
 ## Chapter Markdown Contract
 
@@ -82,3 +83,5 @@ The published output directory is:
 ```text
 dist
 ```
+
+`dist/` is tracked intentionally so Cloudflare Pages projects with legacy "no build command" settings can still deploy the compiled site.

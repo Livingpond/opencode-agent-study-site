@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 300" role="img" aria-label="Agent document generation flow">
+  <rect width="920" height="300" rx="18" fill="#151412"/>
+  <g fill="#f6f3ee" font-family="Arial, sans-serif">
+    <text x="44" y="55" font-size="24" font-weight="700">Agent-native documentation flow</text>
+    <text x="44" y="85" font-size="14" fill="#c7beb1">Agents edit structured source files. Astro and Starlight compile the public site.</text>
+  </g>
+  <g transform="translate(52 126)">
+    <rect width="170" height="92" rx="8" fill="#f6f3ee"/>
+    <text x="22" y="38" fill="#151412" font-family="Arial, sans-serif" font-size="18" font-weight="700">markdown/</text>
+    <text x="22" y="64" fill="#5f584e" font-family="Arial, sans-serif" font-size="13">chapter bodies</text>
+  </g>
+  <g transform="translate(262 126)">
+    <rect width="170" height="92" rx="8" fill="#e8b44b"/>
+    <text x="22" y="38" fill="#151412" font-family="Arial, sans-serif" font-size="18" font-weight="700">data/</text>
+    <text x="22" y="64" fill="#3e3933" font-family="Arial, sans-serif" font-size="13">chapter schema</text>
+  </g>
+  <g transform="translate(472 126)">
+    <rect width="170" height="92" rx="8" fill="#59d9bf"/>
+    <text x="22" y="38" fill="#151412" font-family="Arial, sans-serif" font-size="18" font-weight="700">sync script</text>
+    <text x="22" y="64" fill="#123d36" font-family="Arial, sans-serif" font-size="13">deterministic output</text>
+  </g>
+  <g transform="translate(682 126)">
+    <rect width="170" height="92" rx="8" fill="#c9b8ff"/>
+    <text x="22" y="38" fill="#151412" font-family="Arial, sans-serif" font-size="18" font-weight="700">Starlight</text>
+    <text x="22" y="64" fill="#3e3658" font-family="Arial, sans-serif" font-size="13">static HTML build</text>
+  </g>
+  <g stroke="#f6f3ee" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M226 172h31"/>
+    <path d="M436 172h31"/>
+    <path d="M646 172h31"/>
+  </g>
+  <g fill="#f6f3ee">
+    <path d="M256 164l12 8-12 8z"/>
+    <path d="M466 164l12 8-12 8z"/>
+    <path d="M676 164l12 8-12 8z"/>
+  </g>
+</svg>
