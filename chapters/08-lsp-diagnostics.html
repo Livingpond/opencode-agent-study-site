@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LSP / 诊断 / 上下文增强 - OpenCode Agent 源码学习站点</title>
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <h1 class="chapter-title">LSP / 诊断 / 上下文增强</h1>
+        <p class="chapter-subtitle">理解 OpenCode 如何用 language server 把诊断和代码语义反馈给 agent。</p>
+        <div class="chapter-meta">
+          <span class="badge">章节 08</span>
+          <span class="badge">难度：较难</span>
+          <span class="badge">预计阅读：45 分钟</span>
+          <span class="badge">源码模块：2.8 LSP / 诊断 / 上下文增强</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="toc">
+        <h2>本章目录</h2>
+        <ol>
+          <li><a href="#summary">总结</a></li>
+          <li><a href="#path">源码路径</a></li>
+          <li><a href="#flow">整体链路</a></li>
+          <li><a href="#source">源码讲解</a></li>
+          <li><a href="#ts">TS 语法</a></li>
+          <li><a href="#patterns">架构思想</a></li>
+          <li><a href="#mini">mini agent</a></li>
+          <li><a href="#feynman">复述</a></li>
+          <li><a href="#exercise">练习</a></li>
+          <li><a href="#next">下一步</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="summary" class="section summary-card">
+          <h2>0-1. 学习目标与一句话</h2>
+          <p>LSP 模块是代码语义反馈层：它按文件懒启动 language server，编辑后 <code>touchFile</code> 等待 diagnostics，把错误追加到 tool output；同时 <code>lsp</code> tool 提供 definition、references、hover、symbols 等查询。</p>
+          <p>来源：<code>packages/opencode/src/lsp/lsp.ts:211-299</code>、<code>packages/opencode/src/lsp/lsp.ts:346-379</code>、<code>packages/opencode/src/tool/lsp.ts:37-110</code>。</p>
+        </section>
+
+        <section id="path" class="section source-card">
+          <h2>2-5. 它的位置与最小源码路径</h2>
+          <p class="card-title">源码路径卡片</p>
+          <ol>
+            <li><code>lsp/lsp.ts:123-138</code>：LSP service interface。</li>
+            <li><code>lsp/lsp.ts:211-299</code>：按文件懒启动 client。</li>
+            <li><code>lsp/lsp.ts:346-379</code>：touchFile 和 diagnostics 聚合。</li>
+            <li><code>lsp/client.ts:141-305</code>：JSON-RPC connection 和 initialize。</li>
+            <li><code>lsp/client.ts:594-692</code>：didOpen/didChange 和等待 diagnostics。</li>
+            <li><code>tool/lsp.ts:37-110</code>：LSP tool。</li>
+            <li><code>tool/edit.ts:192-207</code>、<code>tool/write.ts:80-99</code>：编辑后诊断回填。</li>
+          </ol>
+        </section>
+
+        <section id="flow" class="section">
+          <h2>6. 用户输入到 agent 行动的整体链路</h2>
+          <pre><code>edit/write tool
+  -&gt; modify file
+  -&gt; lsp.touchFile(file, "document" or "full")
+  -&gt; getClients(file)
+  -&gt; client.notify.open(didOpen/didChange)
+  -&gt; waitForDiagnostics
+  -&gt; lsp.diagnostics()
+  -&gt; Diagnostic.report(...)
+  -&gt; tool output includes errors
+  -&gt; next LLM round</code></pre>
+          <div class="java-card">
+            <p class="card-title">Java 类比</p>
+            <p><code>LSP.Service</code> 像 <code>LanguageIntelligenceService</code>；<code>LSPServer.Info</code> 像 server factory；<code>touchFile</code> 像 IDE 的 documentOpened/documentChanged；<code>Diagnostic.report</code> 像编译错误格式化器。</p>
+          </div>
+        </section>
+
+        <section id="source" class="section">
+          <h2>7. 核心源码逐段讲解</h2>
+          <h3>LSP Interface</h3>
+          <pre><code>export interface Interface {
+  readonly touchFile: (input: string, diagnostics?: "document" | "full") =&gt; Effect.Effect&lt;void&gt;
+  readonly diagnostics: () =&gt; Effect.Effect&lt;Record&lt;string, LSPClient.Diagnostic[]&gt;&gt;
+  readonly hover: (input: LocInput) =&gt; Effect.Effect&lt;any&gt;
+  readonly definition: (input: LocInput) =&gt; Effect.Effect&lt;any[]&gt;
+  readonly references: (input: LocInput) =&gt; Effect.Effect&lt;any[]&gt;
+  readonly documentSymbol: (uri: string) =&gt; Effect.Effect&lt;(DocumentSymbol | Symbol)[]&gt;
+}</code></pre>
+          <p>路径：<code>packages/opencode/src/lsp/lsp.ts:123-138</code>。</p>
+
+          <h3>懒启动 client</h3>
+          <pre><code>if (!containsPath(file, ctx)) return []
+const extension = path.parse(file).ext || file
+for (const server of Object.values(s.servers)) {
+  if (server.extensions.length &amp;&amp; !server.extensions.includes(extension)) continue
+  const root = await server.root(file, ctx)
+  if (!root) continue
+  if (s.broken.has(root + server.id)) continue
+  const match = s.clients.find((x) =&gt; x.root === root &amp;&amp; x.serverID === server.id)
+  if (match) { result.push(match); continue }
+  const task = schedule(server, root, root + server.id)
+  s.spawning.set(root + server.id, task)
+  const client = await task
+  if (client) result.push(client)
+}</code></pre>
+          <p>路径：<code>packages/opencode/src/lsp/lsp.ts:211-299</code>。</p>
+
+          <h3>touchFile</h3>
+          <pre><code>const clients = yield* getClients(input)
+yield* Effect.promise(() =&gt;
+  Promise.all(
+    clients.map(async (client) =&gt; {
+      const after = Date.now()
+      const version = await client.notify.open({ path: input })
+      if (!diagnostics) return
+      return client.waitForDiagnostics({ path: input, version, mode: diagnostics, after })
+    }),
+  ).catch((err) =&gt; {
+    log.error("failed to touch file", { err, file: input })
+  }),
+)</code></pre>
+          <p>路径：<code>packages/opencode/src/lsp/lsp.ts:346-366</code>。</p>
+
+          <h3>client open/change</h3>
+          <pre><code>const document = files[request.path]
+if (document !== undefined) {
+  const next = document.version + 1
+  files[request.path] = { version: next, text }
+  await connection.sendNotification("textDocument/didChange", {
+    textDocument: { uri: pathToFileURL(request.path).href, version: next },
+    contentChanges: [{ text }],
+  })
+  return next
+}
+
+await connection.sendNotification("textDocument/didOpen", {
+  textDocument: { uri: pathToFileURL(request.path).href, languageId, version: 0, text },
+})</code></pre>
+          <p>路径：<code>packages/opencode/src/lsp/client.ts:594-669</code>。</p>
+
+          <h3>LSP tool</h3>
+          <pre><code>yield* ctx.ask({
+  permission: "lsp",
+  patterns: ["*"],
+  always: ["*"],
+  metadata: meta,
+})
+
+yield* lsp.touchFile(file, "document")
+
+switch (args.operation) {
+  case "goToDefinition":
+    return lsp.definition(position)
+  case "findReferences":
+    return lsp.references(position)
+  case "hover":
+    return lsp.hover(position)
+}</code></pre>
+          <p>路径：<code>packages/opencode/src/tool/lsp.ts:56-103</code>。</p>
+        </section>
+
+        <section id="ts" class="section">
+          <h2>8. 关键 TypeScript 语法复习</h2>
+          <ul>
+            <li><code>as const</code>：让 LSP operation 数组变成 literal union。</li>
+            <li><code>interface</code>：编译期接口，运行时不存在。</li>
+            <li><code>diagnostics?: "document" | "full"</code>：可选参数 + literal union。</li>
+            <li><code>function* &lt;T&gt;</code>：泛型函数，返回类型由 callback 决定。</li>
+            <li><code>get diagnostics()</code>：JS getter，调用像属性。</li>
+            <li><code>results.flat().filter(Boolean)</code>：类似 Java Stream flatMap + nonNull。</li>
+          </ul>
+        </section>
+
+        <section id="patterns" class="section">
+          <h2>9-10. 架构思想与模块协作</h2>
+          <ul>
+            <li>Lazy initialization：按文件需要启动 language server。</li>
+            <li>Factory/Registry：server info 和 client cache 分离。</li>
+            <li>JSON-RPC adapter：stdin/stdout 封装成 LSP connection。</li>
+            <li>Feedback loop：diagnostics 写回 tool output，进入下一轮 LLM。</li>
+            <li>Best-effort enhancement：LSP 故障记录日志，不让 edit/write 整体崩掉。</li>
+          </ul>
+        </section>
+
+        <section id="mini" class="section">
+          <h2>11. mini agent 对应代码</h2>
+          <pre><code>async function afterEdit(file, ctx) {
+  await lsp.touchFile(file, "document")
+  const diagnostics = await lsp.diagnostics()
+  const block = reportErrors(file, diagnostics[file] ?? [])
+  return block
+    ? "Edit applied successfully.\n\nDiagnostics detected:\n" + block
+    : "Edit applied successfully."
+}</code></pre>
+        </section>
+
+        <section id="feynman" class="section feynman-card">
+          <h2>12. 费曼复述区</h2>
+          <ol>
+            <li>为什么 edit/write 后要调用 LSP？</li>
+            <li><code>touchFile</code> 做了哪两件事？</li>
+            <li>push diagnostics 和 pull diagnostics 有什么差异？</li>
+            <li>LSP tool 和自动 diagnostics 的关系是什么？</li>
+          </ol>
+        </section>
+
+        <section id="exercise" class="section exercise-card">
+          <h2>13-15. 练习与自测</h2>
+          <ul>
+            <li>入门：把 <code>LSP.Interface</code> 方法分成 lifecycle/diagnostics/query。</li>
+            <li>进阶：解释 <code>clients</code>、<code>spawning</code>、<code>broken</code> 三个状态。</li>
+            <li>源码追踪：从 <code>EditTool</code> 追到 <code>client.notify.open</code>。</li>
+            <li>小实现：写一个 mini diagnostics service，并在 edit tool 后调用。</li>
+            <li>自测：diagnostics 最终如何进入下一轮模型推理？</li>
+          </ul>
+        </section>
+
+        <section id="next" class="section next-card">
+          <h2>16. 下一步阅读建议</h2>
+          <p>继续读 “UI / TUI / Desktop / IDE”。LSP 和权限都通过事件、tool output 和 session 状态对外呈现，UI 章会看到这些状态如何被不同前端消费。</p>
+        </section>
+
+        <nav class="footer-nav">
+          <a href="../index.html">返回首页</a>
+          <span> · </span>
+          <a href="../markdown/08-lsp-diagnostics.md">查看 Markdown</a>
+        </nav>
+      </div>
+    </main>
+  </body>
+</html>

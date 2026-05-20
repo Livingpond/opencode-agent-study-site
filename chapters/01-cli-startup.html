@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CLI / 启动入口 - OpenCode Agent 源码学习站点</title>
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <h1 class="chapter-title">CLI / 启动入口</h1>
+        <p class="chapter-subtitle">从 <code>process.argv</code> 到 <code>client.session.prompt</code>，理解 CLI 如何把用户输入送入 agent runtime。</p>
+        <div class="chapter-meta">
+          <span class="badge">章节 01</span>
+          <span class="badge">难度：入门</span>
+          <span class="badge">预计阅读：30 分钟</span>
+          <span class="badge">源码模块：2.1 CLI / 启动入口</span>
+        </div>
+      </div>
+    </header>
+    <main class="layout">
+      <aside class="toc">
+        <h2>本章目录</h2>
+        <ol>
+          <li><a href="#goals">学习目标</a></li>
+          <li><a href="#plain">一句话</a></li>
+          <li><a href="#position">位置</a></li>
+          <li><a href="#java">Java 类比</a></li>
+          <li><a href="#path">源码路径</a></li>
+          <li><a href="#flow">整体链路</a></li>
+          <li><a href="#source">源码讲解</a></li>
+          <li><a href="#ts">TS 语法</a></li>
+          <li><a href="#mini">mini agent</a></li>
+          <li><a href="#feynman">费曼复述</a></li>
+          <li><a href="#exercise">练习</a></li>
+          <li><a href="#next">下一步</a></li>
+        </ol>
+      </aside>
+      <div class="content">
+        <section id="goals" class="section"><h2>0. 本章学习目标</h2><p>理解 <code>opencode</code> 进程如何启动，yargs 如何注册子命令，<code>run</code> 如何处理参数、stdin、文件附件、session 和事件订阅。</p></section>
+        <section id="plain" class="section summary-card"><h2>1. 一句话讲明白</h2><p>OpenCode 的 CLI 层不是 agent 本体，而是入口适配层：把命令行输入整理成 session API 请求，再交给 runtime。来源：<code>packages/opencode/src/index.ts:70-180</code>、<code>packages/opencode/src/cli/cmd/run.ts:768-879</code>。</p></section>
+        <section id="position" class="section"><h2>2. 它在 OpenCode agent 中的位置</h2><p><code>index.ts</code> 是进程 main；<code>RunCommand</code> 是 agent 学习第一入口；<code>effectCmd</code> 是命令运行时外壳。来源：<code>packages/opencode/src/index.ts:158-180</code>、<code>packages/opencode/src/cli/effect-cmd.ts:70-93</code>。</p></section>
+        <section class="section"><h2>3. 生活类比</h2><p>CLI 像服务台：确认目录、附件、旧会话、交互模式，然后把工单交给 agent 服务系统。</p></section>
+        <section id="java" class="section java-card"><h2>4. Java 开发者类比</h2><ul><li><code>index.ts</code> 类似 <code>main()</code> + Picocli 根命令。</li><li><code>RunCommand</code> 类似 <code>@Command</code> handler。</li><li><code>effectCmd</code> 类似拦截器，负责加载项目上下文和 finally 清理。</li><li>本地 <code>Server.Default().app.fetch</code> 类似 in-process controller 调用。</li></ul></section>
+        <section id="path" class="section source-card"><h2>5. 最小源码路径</h2><ol><li><code>packages/opencode/src/index.ts:58-91</code></li><li><code>packages/opencode/src/index.ts:158-180</code></li><li><code>packages/opencode/src/cli/effect-cmd.ts:70-93</code></li><li><code>packages/opencode/src/cli/cmd/run.ts:127-245</code></li><li><code>packages/opencode/src/cli/cmd/run.ts:246-360</code></li><li><code>packages/opencode/src/cli/cmd/run.ts:396-516</code></li><li><code>packages/opencode/src/cli/cmd/run.ts:768-879</code></li></ol></section>
+        <section id="flow" class="section"><h2>6. 用户输入到 agent 行动的整体链路</h2><pre><code>process.argv
+  -&gt; hideBin
+  -&gt; yargs(args)
+  -&gt; RunCommand handler
+  -&gt; resolve message/stdin/files/session
+  -&gt; createOpencodeClient
+  -&gt; client.session.prompt
+  -&gt; SessionPrompt.prompt</code></pre></section>
+        <section id="source" class="section"><h2>7. 核心源码逐段讲解</h2><h3>7.1 yargs 入口</h3><pre><code>const args = hideBin(process.argv)
+const cli = yargs(args)
+  .scriptName("opencode")
+  .option("pure", { describe: "run without external plugins", type: "boolean" })</code></pre><p>来源：<code>packages/opencode/src/index.ts:58-91</code>。</p><h3>7.2 effectCmd</h3><pre><code>const useInstance = typeof opts.instance === "function" ? opts.instance(args) : opts.instance !== false
+if (!useInstance) {
+  await AppRuntime.runPromise(opts.handler(args))
+  return
+}
+const { store, ctx } = await AppRuntime.runPromise(
+  InstanceStore.Service.use((store) =&gt; store.load({ directory }).pipe(Effect.map((ctx) =&gt; ({ store, ctx })))),
+)
+try {
+  await AppRuntime.runPromise(opts.handler(args).pipe(Effect.provideService(InstanceRef, ctx)))
+} finally {
+  await AppRuntime.runPromise(store.dispose(ctx))
+}</code></pre><p>来源：<code>packages/opencode/src/cli/effect-cmd.ts:70-93</code>。</p><h3>7.3 run 命令发送 prompt</h3><pre><code>const result = await client.session.prompt({
+  sessionID,
+  agent,
+  model,
+  variant: args.variant,
+  parts: [...files, { type: "text", text: message }],
+})</code></pre><p>来源：<code>packages/opencode/src/cli/cmd/run.ts:791-798</code>。</p><h3>7.4 事件渲染</h3><p>CLI 监听 <code>message.part.updated</code>、<code>session.error</code>、<code>permission.asked</code>，把 runtime 状态渲染到 stdout/UI。来源：<code>packages/opencode/src/cli/cmd/run.ts:637-759</code>。</p></section>
+        <section id="ts" class="section"><h2>8. 关键 TypeScript 语法复习</h2><ul><li>default import：<code>import yargs from "yargs"</code>。</li><li>namespace import：<code>import * as Log</code>。</li><li>泛型函数：<code>effectCmd = &lt;Args, A&gt;(...)</code>。</li><li>object spread/array spread：<code>parts: [...files, {...}]</code>。</li><li>dynamic import：<code>await import("@/server/server")</code>。</li></ul></section>
+        <section class="section"><h2>9. 设计模式和架构思想</h2><ul><li>Command Pattern</li><li>Adapter</li><li>Interceptor</li><li>Event-driven UI</li><li>Single runtime path</li></ul></section>
+        <section class="section"><h2>10. 模块协作</h2><p>CLI 负责 cwd、附件、session 和输出；Provider/Tool/Session runtime 在后续服务中处理。关键边界：CLI 只解析 <code>provider/model</code>，不直接调用模型。来源：<code>packages/opencode/src/cli/cmd/run.ts:31-41</code>。</p></section>
+        <section id="mini" class="section"><h2>11. mini agent 对应代码</h2><pre><code>async function main(argv: string[]) {
+  const args = parseArgs(argv)
+  const files = await resolveFiles(args.file, args.cwd)
+  const client = createMiniAgentClient({ cwd: args.cwd })
+  const sessionID = await getOrCreateSession(client, args)
+  renderEvents(client.subscribe(sessionID))
+  await client.prompt(sessionID, { parts: [...files, { type: "text", text: args.message }] })
+}</code></pre></section>
+        <section id="feynman" class="section feynman-card"><h2>12. 费曼复述区</h2><ol><li>为什么 CLI 不是 agent 核心？</li><li><code>effectCmd</code> 解决了什么重复问题？</li><li>为什么本地模式也走 <code>createOpencodeClient</code>？</li></ol></section>
+        <section id="exercise" class="section exercise-card"><h2>13. 练习题</h2><ul><li>找到 <code>RunCommand</code> 的 <code>--model</code> 和 <code>--agent</code> 参数。</li><li>解释 <code>run --attach</code> 为什么不需要本地 instance。</li><li>实现一个支持 <code>run "hello"</code> 和 <code>--file</code> 的 mini CLI。</li></ul></section>
+        <section class="section"><h2>14. 源码追踪任务</h2><ol><li><code>index.ts:158-180</code> -> <code>RunCommand</code></li><li><code>effect-cmd.ts:70-93</code> -> <code>InstanceStore.Service.load</code></li><li><code>run.ts:791-798</code> -> session API handler</li><li><code>run.ts:637-759</code> -> 事件渲染</li></ol></section>
+        <section class="section"><h2>15. 面试式自测</h2><ol><li>CLI 层该不该直接调用模型？</li><li>为什么要支持 session resume/fork？</li><li><code>--file</code> 在 CLI 层和 runtime 层分别做什么？</li></ol></section>
+        <section id="next" class="section next-card"><h2>16. 下一步阅读建议</h2><p>下一章读 “用户输入与会话”，理解 <code>client.session.prompt</code> 进入 runtime 后如何转成 <code>MessageV2.User</code> 和 parts。</p></section>
+        <nav class="footer-nav"><a href="../index.html">返回首页</a><span> · </span><a href="../markdown/01-cli-startup.md">查看 Markdown</a></nav>
+      </div>
+    </main>
+  </body>
+</html>
+

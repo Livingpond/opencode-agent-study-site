@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SDK / API / 对外扩展点 - OpenCode Agent 源码学习站点</title>
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <h1 class="chapter-title">SDK / API / 对外扩展点</h1>
+        <p class="chapter-subtitle">理解 OpenCode 如何用 typed HTTP API、JS SDK、SSE 和 plugin hooks 暴露 runtime。</p>
+        <div class="chapter-meta">
+          <span class="badge">章节 12</span>
+          <span class="badge">难度：中等</span>
+          <span class="badge">预计阅读：40 分钟</span>
+          <span class="badge">源码模块：2.12 SDK / API / 对外扩展点</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="toc">
+        <h2>本章目录</h2>
+        <ol>
+          <li><a href="#summary">总结</a></li>
+          <li><a href="#path">源码路径</a></li>
+          <li><a href="#flow">整体链路</a></li>
+          <li><a href="#source">源码讲解</a></li>
+          <li><a href="#ts">TS 语法</a></li>
+          <li><a href="#patterns">架构思想</a></li>
+          <li><a href="#mini">mini agent</a></li>
+          <li><a href="#feynman">复述</a></li>
+          <li><a href="#exercise">练习</a></li>
+          <li><a href="#next">下一步</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="summary" class="section summary-card">
+          <h2>0-1. 学习目标与一句话</h2>
+          <p>SDK/API/扩展层是外部接口层：server 组合 typed API 和 runtime services，SDK 包装 generated client，SSE 输出事件流，插件系统通过 typed hooks 让外部代码参与工具、模型参数、shell env 和事件处理。</p>
+          <p>来源：<code>packages/opencode/src/server/routes/instance/httpapi/api.ts:30-62</code>、<code>packages/sdk/js/src/client.ts:33-57</code>、<code>packages/opencode/src/plugin/index.ts:261-274</code>。</p>
+        </section>
+
+        <section id="path" class="section source-card">
+          <h2>2-5. 它的位置与最小源码路径</h2>
+          <p class="card-title">源码路径卡片</p>
+          <ol>
+            <li><code>server/server.ts:58-67</code>：in-process fetch。</li>
+            <li><code>httpapi/api.ts:30-62</code>：API group 组合。</li>
+            <li><code>httpapi/server.ts:182-240</code>：routes 和 runtime services 装配。</li>
+            <li><code>groups/session.ts:312-363</code>：session prompt/command/shell endpoint。</li>
+            <li><code>handlers/event.ts:21-53</code>：SSE event response。</li>
+            <li><code>sdk/js/src/client.ts:33-57</code>：SDK client wrapper。</li>
+            <li><code>plugin/index.ts:43-55</code>、<code>261-274</code>：Plugin interface 和 trigger。</li>
+          </ol>
+        </section>
+
+        <section id="flow" class="section">
+          <h2>6. 用户输入到 agent 行动的整体链路</h2>
+          <pre><code>CLI / UI / Plugin
+  -&gt; JS SDK
+  -&gt; typed HTTP endpoint
+  -&gt; HttpApi handler
+  -&gt; Effect services
+  -&gt; SessionPrompt / ToolRegistry / Provider / Permission
+  -&gt; Bus events
+  -&gt; SSE /event
+  -&gt; SDK event stream</code></pre>
+          <div class="java-card">
+            <p class="card-title">Java 类比</p>
+            <p><code>HttpApiGroup</code> 像 Spring Controller group；Effect Layer 像 auto configuration；JS SDK 像 OpenAPI generated client wrapper；SSE 像 WebFlux <code>text/event-stream</code>；Plugin hook 像 SPI + interceptor。</p>
+          </div>
+        </section>
+
+        <section id="source" class="section">
+          <h2>7. 核心源码逐段讲解</h2>
+          <h3>API group 组合</h3>
+          <pre><code>export const InstanceHttpApi = HttpApi.make("opencode-instance")
+  .addHttpApi(ConfigApi)
+  .addHttpApi(FileApi)
+  .addHttpApi(PermissionApi)
+  .addHttpApi(ProviderApi)
+  .addHttpApi(SessionApi)
+  .addHttpApi(SyncApi)
+  .addHttpApi(V2Api)
+  .addHttpApi(TuiApi)
+  .middleware(SchemaErrorMiddleware)
+
+export const OpenCodeHttpApi = HttpApi.make("opencode")
+  .addHttpApi(RootHttpApi)
+  .addHttpApi(EventApi)
+  .addHttpApi(InstanceHttpApi)
+  .addHttpApi(PtyConnectApi)</code></pre>
+          <p>路径：<code>packages/opencode/src/server/routes/instance/httpapi/api.ts:36-59</code>。</p>
+
+          <h3>Routes 装配 runtime</h3>
+          <pre><code>return Layer.mergeAll(rootApiRoutes, eventApiRoutes, instanceRoutes, docRoute, uiRoute).pipe(
+  Layer.provide([
+    Agent.defaultLayer,
+    Config.defaultLayer,
+    File.defaultLayer,
+    LSP.defaultLayer,
+    Permission.defaultLayer,
+    Plugin.defaultLayer,
+    Provider.defaultLayer,
+    Session.defaultLayer,
+    SessionPrompt.defaultLayer,
+    ToolRegistry.defaultLayer,
+    Bus.layer,
+  ]),
+  Layer.provide(InstanceLayer.layer),
+)</code></pre>
+          <p>路径：<code>packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240</code>。</p>
+
+          <h3>Session prompt endpoint</h3>
+          <pre><code>HttpApiEndpoint.post("prompt", SessionPaths.prompt, {
+  params: { sessionID: SessionID },
+  query: WorkspaceRoutingQuery,
+  payload: PromptPayload,
+  success: described(MessageV2.WithParts, "Created message"),
+  error: [HttpApiError.BadRequest, ApiNotFoundError],
+})</code></pre>
+          <p>路径：<code>packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:312-324</code>。</p>
+
+          <h3>SSE event handler</h3>
+          <pre><code>const events = (yield* bus.subscribeAll()).pipe(
+  Stream.takeUntil((event) =&gt; event.type === Bus.InstanceDisposed.type),
+)
+const heartbeat = Stream.tick("10 seconds").pipe(
+  Stream.drop(1),
+  Stream.map(() =&gt; ({ id: Bus.createID(), type: "server.heartbeat", properties: {} })),
+)
+
+return HttpServerResponse.stream(
+  Stream.make({ id: Bus.createID(), type: "server.connected", properties: {} }).pipe(
+    Stream.concat(events.pipe(Stream.merge(heartbeat, { haltStrategy: "left" }))),
+    Stream.map(eventData),
+    Stream.pipeThroughChannel(Sse.encode()),
+  ),
+  { contentType: "text/event-stream" },
+)</code></pre>
+          <p>路径：<code>packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53</code>。</p>
+
+          <h3>SDK client wrapper</h3>
+          <pre><code>export function createOpencodeClient(config?: Config &amp; { directory?: string }) {
+  if (config?.directory) {
+    config.headers = {
+      ...config.headers,
+      "x-opencode-directory": encodeURIComponent(config.directory),
+    }
+  }
+
+  const client = createClient(config)
+  client.interceptors.request.use((request) =&gt; rewrite(request, config?.directory))
+  client.interceptors.error.use(wrapClientError)
+  return new OpencodeClient({ client })
+}</code></pre>
+          <p>路径：<code>packages/sdk/js/src/client.ts:33-57</code>。</p>
+
+          <h3>Plugin trigger</h3>
+          <pre><code>const trigger = Effect.fn("Plugin.trigger")(function* &lt;Name extends TriggerName&gt;(name: Name, input: Input, output: Output) {
+  const s = yield* InstanceState.get(state)
+  for (const hook of s.hooks) {
+    const fn = hook[name] as any
+    if (!fn) continue
+    yield* Effect.promise(async () =&gt; fn(input, output))
+  }
+  return output
+})</code></pre>
+          <p>路径：<code>packages/opencode/src/plugin/index.ts:261-274</code>。</p>
+        </section>
+
+        <section id="ts" class="section">
+          <h2>8. 关键 TypeScript 语法复习</h2>
+          <ul>
+            <li>类型编程：<code>TriggerName</code> 从 <code>Hooks</code> 中筛选可 trigger 的 hook 名。</li>
+            <li><code>Parameters&lt;Fn&gt;</code>：抽取函数参数类型。</li>
+            <li><code>ReturnType&lt;typeof createOpencodeClient&gt;</code>：抽取函数返回类型。</li>
+            <li><code>namespace</code>：把类型和函数组织到同一命名空间。</li>
+            <li>async stream：SSE 被 SDK 消费成异步事件流。</li>
+            <li>Effect Layer：类似 DI 容器装配，但显式写在代码里。</li>
+          </ul>
+        </section>
+
+        <section id="patterns" class="section">
+          <h2>9-10. 架构思想与模块协作</h2>
+          <ul>
+            <li>Typed API contract：endpoint 明确 payload/success/error schema。</li>
+            <li>Generated SDK + wrapper：生成客户端外再加 directory/error/fetch 适配。</li>
+            <li>SSE event bridge：Bus events 对外变成 event stream。</li>
+            <li>Plugin SPI：typed hooks 接入工具、模型参数、shell env、事件。</li>
+            <li>In-process adapter：local CLI/插件可直接调用 server handler。</li>
+          </ul>
+        </section>
+
+        <section id="mini" class="section">
+          <h2>11. mini agent 对应代码</h2>
+          <pre><code>app.post("/session/:id/prompt", (req) =&gt; sessionPrompt.prompt(req.params.id, req.body))
+app.get("/event", () =&gt; sse(bus.subscribeAll()))
+
+export function createMiniClient(baseUrl) {
+  return {
+    session: { prompt: (id, body) =&gt; post(`${baseUrl}/session/${id}/prompt`, body) },
+    event: () =&gt; connectSse(`${baseUrl}/event`),
+  }
+}
+
+async function trigger(name, input, output) {
+  for (const hook of hooks) await hook[name]?.(input, output)
+  return output
+}</code></pre>
+        </section>
+
+        <section id="feynman" class="section feynman-card">
+          <h2>12. 费曼复述区</h2>
+          <ol>
+            <li>RootHttpApi、InstanceHttpApi、EventApi 的差异是什么？</li>
+            <li>SDK 为什么要处理 directory？</li>
+            <li>Event API 为什么要 heartbeat？</li>
+            <li>Plugin.trigger 和 monkey patch 的差异是什么？</li>
+          </ol>
+        </section>
+
+        <section id="exercise" class="section exercise-card">
+          <h2>13-15. 练习与自测</h2>
+          <ul>
+            <li>入门：列出 OpenCodeHttpApi 包含的 group。</li>
+            <li>进阶：把 createRoutes 的 service layer 分组。</li>
+            <li>源码追踪：从 client.session.prompt 追到 handler。</li>
+            <li>小实现：写一个 mini SDK/API，包含 prompt、permission、event、plugin trigger。</li>
+            <li>自测：如果插件要修改 LLM temperature，应该接哪个 hook？</li>
+          </ul>
+        </section>
+
+        <section id="next" class="section next-card">
+          <h2>16. 下一步阅读建议</h2>
+          <p>继续读 “测试与工程化”。API/SDK/Plugin 已经说明系统边界，工程化章会看这个多 package 项目如何构建、检查和测试。</p>
+        </section>
+
+        <nav class="footer-nav">
+          <a href="../index.html">返回首页</a>
+          <span> · </span>
+          <a href="../markdown/12-sdk-api-extension.md">查看 Markdown</a>
+        </nav>
+      </div>
+    </main>
+  </body>
+</html>

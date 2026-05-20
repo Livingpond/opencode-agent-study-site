@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>用户输入与会话 - OpenCode Agent 源码学习站点</title>
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <h1 class="chapter-title">用户输入与会话</h1>
+        <p class="chapter-subtitle">把外部输入变成 session 下稳定可复读的 user message 和 message parts。</p>
+        <div class="chapter-meta"><span class="badge">章节 02</span><span class="badge">难度：中等</span><span class="badge">预计阅读：35 分钟</span><span class="badge">源码模块：2.2 用户输入与会话</span></div>
+      </div>
+    </header>
+    <main class="layout">
+      <aside class="toc"><h2>本章目录</h2><ol><li><a href="#goals">学习目标</a></li><li><a href="#plain">一句话</a></li><li><a href="#path">源码路径</a></li><li><a href="#flow">链路</a></li><li><a href="#source">源码讲解</a></li><li><a href="#ts">TS</a></li><li><a href="#mini">mini agent</a></li><li><a href="#feynman">复述</a></li><li><a href="#exercise">练习</a></li></ol></aside>
+      <div class="content">
+        <section id="goals" class="section"><h2>0. 本章学习目标</h2><p>理解 session API payload、HTTP handler、<code>createUserMessage</code>、part 解析、message 持久化，以及它们如何成为 agent loop 的上下文。</p></section>
+        <section id="plain" class="section summary-card"><h2>1. 一句话讲明白</h2><p>用户输入与会话模块负责把外部请求变成内部事实：一个 session 下的 user message 和一组 message parts。来源：<code>packages/opencode/src/session/prompt.ts:689-731</code>、<code>packages/opencode/src/session/prompt.ts:1116-1230</code>。</p></section>
+        <section class="section"><h2>2. 它在 OpenCode agent 中的位置</h2><p>CLI/API 只提供输入，agent loop 只消费消息历史。session/message 层负责把文本、附件、agent mention、MCP resource、权限覆盖和模型选择整理成统一结构。</p></section>
+        <section class="section"><h2>3. 生活类比</h2><p>session 是项目档案，message 是每次沟通记录，part 是正文、附件、工具结果或系统补充。agent 每轮工作前读档案。</p></section>
+        <section class="section java-card"><h2>4. Java 开发者类比</h2><ul><li><code>Session.Info</code> 类似会话 aggregate。</li><li><code>MessageV2.User</code> / assistant 类似消息实体。</li><li><code>Part</code> 是 message 的子实体集合。</li><li><code>SessionPrompt.prompt</code> 是 Application Service。</li></ul></section>
+        <section id="path" class="section source-card"><h2>5. 最小源码路径</h2><ol><li><code>groups/session.ts:66-68</code></li><li><code>groups/session.ts:312-324</code></li><li><code>handlers/session.ts:279-290</code></li><li><code>prompt.ts:689-731</code></li><li><code>prompt.ts:788-1085</code></li><li><code>prompt.ts:1116-1230</code></li></ol></section>
+        <section id="flow" class="section"><h2>6. 用户输入到 agent 行动的整体链路</h2><pre><code>client.session.prompt(payload)
+  -&gt; PromptPayload
+  -&gt; sessionHandlers.prompt
+  -&gt; SessionPrompt.prompt
+  -&gt; createUserMessage
+  -&gt; resolvePart
+  -&gt; sessions.updateMessage/updatePart
+  -&gt; loop(sessionID)</code></pre></section>
+        <section id="source" class="section"><h2>7. 核心源码逐段讲解</h2><h3>7.1 Payload 从内部 schema 派生</h3><pre><code>export const PromptPayload = Schema.Struct(Struct.omit(SessionPrompt.PromptInput.fields, ["sessionID"]))</code></pre><p>路径：<code>packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:66</code>。</p><h3>7.2 Handler 补 sessionID</h3><pre><code>const message = yield* promptSvc.prompt({
+  ...ctx.payload,
+  sessionID: ctx.params.sessionID,
+})</code></pre><p>路径：<code>packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts:279-289</code>。</p><h3>7.3 User message schema</h3><pre><code>export const User = Schema.Struct({
+  role: Schema.Literal("user"),
+  agent: Schema.String,
+  model: Schema.Struct({ providerID: ProviderID, modelID: ModelID }),
+  tools: Schema.optional(Schema.Record(Schema.String, Schema.Boolean)),
+})</code></pre><p>路径：<code>packages/opencode/src/session/message-v2.ts:327-350</code>。</p><h3>7.4 Part union</h3><pre><code>export const Part = Schema.Union([
+  TextPart, SubtaskPart, ReasoningPart, FilePart, ToolPart,
+  StepStartPart, StepFinishPart, SnapshotPart, PatchPart,
+  AgentPart, RetryPart, CompactionPart,
+]).annotate({ discriminator: "type", identifier: "Part" })</code></pre><p>路径：<code>packages/opencode/src/session/message-v2.ts:352-365</code>。</p><h3>7.5 创建消息并写入</h3><pre><code>const ag = agentName ? yield* agents.get(agentName) : yield* agents.defaultInfo()
+const model = input.model ?? ag.model ?? (yield* currentModel(input.sessionID))
+const info: MessageV2.User = { role: "user", sessionID: input.sessionID, agent: ag.name, model: { providerID: model.providerID, modelID: model.modelID, variant } }
+yield* sessions.updateMessage(info)
+for (const part of parts) yield* sessions.updatePart(part)</code></pre><p>路径：<code>packages/opencode/src/session/prompt.ts:689-731</code>、<code>packages/opencode/src/session/prompt.ts:1116-1117</code>。</p></section>
+        <section id="ts" class="section"><h2>8. 关键 TypeScript 语法复习</h2><ul><li><code>Struct.omit</code>：从内部 schema 派生 API payload。</li><li>object spread：<code>{ ...ctx.payload, sessionID }</code>。</li><li>optional field：<code>variant: Schema.optional(...)</code>。</li><li>discriminated union：<code>Part</code> 以 <code>type</code> 判别。</li><li><code>Effect.forEach</code> 并发解析 parts。</li></ul></section>
+        <section class="section"><h2>9. 设计模式和架构思想</h2><ul><li>DTO 派生</li><li>Aggregate</li><li>Message/Part 子实体</li><li>Plugin hook</li><li>Controller 到 Application Service 的边界适配</li></ul></section>
+        <section class="section"><h2>10. 模块协作</h2><p>Tool：file part 可调用 read tool；Provider：创建 message 时决定 model；Session：持久化 message/part；文件系统：file URL 被读取成 synthetic context。来源：<code>packages/opencode/src/session/prompt.ts:867-1039</code>。</p></section>
+        <section id="mini" class="section"><h2>11. mini agent 对应代码</h2><pre><code>async function prompt(input) {
+  const session = await sessions.get(input.sessionID)
+  const user = createUserMessage(input, session)
+  const parts = await resolveParts(input.parts)
+  await sessions.saveMessage(user)
+  await sessions.saveParts(user.id, parts)
+  return input.noReply ? { info: user, parts } : runLoop(input.sessionID)
+}</code></pre></section>
+        <section id="feynman" class="section feynman-card"><h2>12. 费曼复述区</h2><ol><li>为什么 user message 里要保存 agent/model？</li><li>part union 解决了什么问题？</li><li>为什么 file attachment 会在创建 user message 时被 read tool 读取？</li></ol></section>
+        <section id="exercise" class="section exercise-card"><h2>13. 练习题</h2><ul><li>解释为什么 <code>PromptPayload</code> omit <code>sessionID</code>。</li><li>列出 user message 的核心字段。</li><li>实现一个支持 text/file 的 <code>resolveParts</code>。</li></ul></section>
+        <section class="section"><h2>14. 源码追踪任务</h2><ol><li><code>groups/session.ts:312-324</code> -> handler</li><li>handler -> <code>SessionPrompt.prompt</code></li><li><code>createUserMessage</code> -> model 选择</li><li>file part -> <code>read.execute</code></li></ol></section>
+        <section class="section"><h2>15. 面试式自测</h2><ol><li>为什么 message 和 part 分开？</li><li>为什么 prompt success 是 <code>MessageV2.WithParts</code>？</li><li>插件修改消息的扩展点在哪里？</li></ol></section>
+        <section class="section next-card"><h2>16. 下一步阅读建议</h2><p>下一步读 “Agent 核心循环” 或 “Tool 调用系统”，理解这些 message parts 如何驱动行动。</p></section>
+        <nav class="footer-nav"><a href="../index.html">返回首页</a><span> · </span><a href="../markdown/02-session-message.md">查看 Markdown</a></nav>
+      </div>
+    </main>
+  </body>
+</html>
+

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shell / 命令执行 - OpenCode Agent 源码学习站点</title>
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <h1 class="chapter-title">Shell / 命令执行</h1>
+        <p class="chapter-subtitle">从命令扫描、权限审批到进程执行和输出回写，理解 agent 的命令行动边界。</p>
+        <div class="chapter-meta">
+          <span class="badge">章节 07</span>
+          <span class="badge">难度：较难</span>
+          <span class="badge">预计阅读：45 分钟</span>
+          <span class="badge">源码模块：2.7 Shell / 命令执行</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="toc">
+        <h2>本章目录</h2>
+        <ol>
+          <li><a href="#summary">总结</a></li>
+          <li><a href="#path">源码路径</a></li>
+          <li><a href="#flow">整体链路</a></li>
+          <li><a href="#source">源码讲解</a></li>
+          <li><a href="#ts">TS 语法</a></li>
+          <li><a href="#patterns">架构思想</a></li>
+          <li><a href="#mini">mini agent</a></li>
+          <li><a href="#feynman">复述</a></li>
+          <li><a href="#exercise">练习</a></li>
+          <li><a href="#next">下一步</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="summary" class="section summary-card">
+          <h2>0-1. 学习目标与一句话</h2>
+          <p>Shell 模块把命令执行包装成可扫描、可审批、可取消、可截断、可回填的 tool action。它先用 tree-sitter 分析命令，再通过 <code>ctx.ask</code> 审批，最后执行进程并把输出持续写回 metadata。</p>
+          <p>来源：<code>packages/opencode/src/tool/shell.ts:266-287</code>、<code>packages/opencode/src/tool/shell.ts:374-410</code>、<code>packages/opencode/src/tool/shell.ts:424-596</code>。</p>
+        </section>
+
+        <section id="path" class="section source-card">
+          <h2>2-5. 它的位置与最小源码路径</h2>
+          <p class="card-title">源码路径卡片</p>
+          <ol>
+            <li><code>packages/opencode/src/tool/shell.ts:28-78</code>：风险命令集合和 <code>Scan</code>。</li>
+            <li><code>packages/opencode/src/tool/shell.ts:266-287</code>：把扫描结果转为权限请求。</li>
+            <li><code>packages/opencode/src/tool/shell.ts:307-332</code>：lazy 初始化 tree-sitter parser。</li>
+            <li><code>packages/opencode/src/tool/shell.ts:374-410</code>：从 AST 收集外部目录和 shell patterns。</li>
+            <li><code>packages/opencode/src/tool/shell.ts:424-596</code>：执行、流式输出、截断、超时、取消。</li>
+            <li><code>packages/opencode/src/session/prompt.ts:492-650</code>：用户直接 shell 命令的 session 记录。</li>
+            <li><code>packages/opencode/src/session/run-state.ts:10-24</code>：session 级运行状态。</li>
+          </ol>
+        </section>
+
+        <section id="flow" class="section">
+          <h2>6. 用户输入到 agent 行动的整体链路</h2>
+          <pre><code>model tool-call(shell)
+  -&gt; ShellTool.execute
+  -&gt; parse(params.command)
+  -&gt; collect(rootNode, cwd)
+  -&gt; ctx.ask(external_directory / shell)
+  -&gt; ChildProcessSpawner.spawn
+  -&gt; ctx.metadata(output preview)
+  -&gt; return { title, metadata, output }
+  -&gt; processor writes tool result
+  -&gt; next LLM round</code></pre>
+          <div class="java-card">
+            <p class="card-title">Java 类比</p>
+            <p><code>ShellTool</code> 像 <code>ShellCommandService</code>；<code>collect</code> 像执行前的授权分析器；<code>ChildProcessSpawner</code> 像封装过的 <code>ProcessBuilder</code>；<code>SessionRunState</code> 像 per-session lock。</p>
+          </div>
+        </section>
+
+        <section id="source" class="section">
+          <h2>7. 核心源码逐段讲解</h2>
+          <h3>命令风险词表</h3>
+          <pre><code>const CWD = new Set(["cd", "chdir", "popd", "pushd", "push-location", "set-location"])
+const FILES = new Set([
+  ...CWD,
+  "rm",
+  "cp",
+  "mv",
+  "mkdir",
+  "touch",
+  "chmod",
+  "chown",
+  "cat",
+])
+
+type Scan = {
+  dirs: Set&lt;string&gt;
+  patterns: Set&lt;string&gt;
+  always: Set&lt;string&gt;
+}</code></pre>
+          <p>路径：<code>packages/opencode/src/tool/shell.ts:28-78</code>。这些集合告诉扫描器哪些命令可能携带路径参数。</p>
+
+          <h3>审批</h3>
+          <pre><code>if (scan.dirs.size &gt; 0) {
+  yield* ctx.ask({
+    permission: "external_directory",
+    patterns: globs,
+    always: globs,
+    metadata: {},
+  })
+}
+
+if (scan.patterns.size === 0) return
+yield* ctx.ask({
+  permission: ShellID.ToolID,
+  patterns: Array.from(scan.patterns),
+  always: Array.from(scan.always),
+  metadata: {},
+})</code></pre>
+          <p>路径：<code>packages/opencode/src/tool/shell.ts:266-287</code>。外部目录和 shell 命令是两个权限维度。</p>
+
+          <h3>扫描 AST</h3>
+          <pre><code>for (const node of commands(root)) {
+  const command = parts(node)
+  const tokens = command.map((item) =&gt; item.text)
+  const cmd = ps || shellKind === "cmd" ? tokens[0]?.toLowerCase() : tokens[0]
+
+  if (cmd &amp;&amp; (FILES.has(cmd) || (shellKind === "cmd" &amp;&amp; CMD_FILES.has(cmd)))) {
+    for (const arg of pathArgs(command, ps, shellKind === "cmd")) {
+      const resolved = yield* argPath(arg, cwd, ps, shell)
+      if (!resolved || containsPath(resolved, instance)) continue
+      const dir = (yield* fs.isDir(resolved)) ? resolved : path.dirname(resolved)
+      scan.dirs.add(dir)
+    }
+  }
+}</code></pre>
+          <p>路径：<code>packages/opencode/src/tool/shell.ts:388-400</code>。它不是字符串 split，而是从 tree-sitter AST 抽取命令和参数。</p>
+
+          <h3>执行与输出回写</h3>
+          <pre><code>const handle = yield* spawner.spawn(cmd(input.shell, input.command, input.cwd, input.env))
+
+yield* Effect.forkScoped(
+  Stream.runForEach(Stream.decodeText(handle.all), (chunk) =&gt; {
+    last = preview(last + chunk)
+    return ctx.metadata({
+      metadata: {
+        output: last,
+        description: input.description,
+      },
+    })
+  }),
+)</code></pre>
+          <p>路径：<code>packages/opencode/src/tool/shell.ts:479-530</code>。输出不是最后一次性返回，而是持续更新 tool part。</p>
+
+          <h3>超时和取消</h3>
+          <pre><code>const exit = yield* Effect.raceAll([
+  handle.exitCode.pipe(Effect.map((code) =&gt; ({ kind: "exit" as const, code }))),
+  abort.pipe(Effect.map(() =&gt; ({ kind: "abort" as const, code: null }))),
+  timeout.pipe(Effect.map(() =&gt; ({ kind: "timeout" as const, code: null }))),
+])
+
+if (exit.kind === "abort") {
+  aborted = true
+  yield* handle.kill({ forceKillAfter: "3 seconds" }).pipe(Effect.orDie)
+}</code></pre>
+          <p>路径：<code>packages/opencode/src/tool/shell.ts:542-555</code>。</p>
+
+          <h3>用户直接执行 shell</h3>
+          <pre><code>const userPart: MessageV2.Part = {
+  type: "text",
+  id: PartID.ascending(),
+  messageID: userMsg.id,
+  sessionID: input.sessionID,
+  text: "The following tool was executed by the user",
+  synthetic: true,
+}</code></pre>
+          <p>路径：<code>packages/opencode/src/session/prompt.ts:520-528</code>。直接 shell 也会写进 session history。</p>
+        </section>
+
+        <section id="ts" class="section">
+          <h2>8. 关键 TypeScript 语法复习</h2>
+          <ul>
+            <li><code>Set&lt;string&gt;</code>：类似 Java <code>HashSet&lt;String&gt;</code>。</li>
+            <li><code>{ kind: "exit" as const }</code>：字面量类型，类似 sealed subtype tag。</li>
+            <li><code>params.timeout ?? defaultTimeout</code>：只在 null/undefined 时取默认值。</li>
+            <li><code>await import("web-tree-sitter")</code>：运行时动态 import。</li>
+            <li><code>Effect.acquireRelease</code>：类似 Java <code>try-with-resources</code>。</li>
+            <li><code>{ ...process.env, ...extra.env }</code>：对象 spread，后者覆盖前者。</li>
+          </ul>
+        </section>
+
+        <section id="patterns" class="section">
+          <h2>9-10. 架构思想与模块协作</h2>
+          <ul>
+            <li>Strategy：<code>ShellTool</code> 是 tool strategy。</li>
+            <li>Preflight scanner：<code>collect</code> 先扫描再执行。</li>
+            <li>Policy enforcement point：<code>ctx.ask</code> 统一进入权限系统。</li>
+            <li>Streaming progress：<code>ctx.metadata</code> 持续回写输出预览。</li>
+            <li>Session 协作：tool result 写回 message history，供下一轮 LLM 使用。</li>
+            <li>Plugin 协作：<code>shell.env</code> hook 注入环境变量。</li>
+          </ul>
+        </section>
+
+        <section id="mini" class="section">
+          <h2>11. mini agent 对应代码</h2>
+          <pre><code>async function runShellTool(input, ctx) {
+  const pattern = input.command.split(/\s+/).slice(0, 2).join(" ") + " *"
+  await ctx.ask("shell", [pattern])
+  const child = spawn(input.command, { cwd: input.cwd, shell: true, signal: ctx.signal })
+  child.stdout.on("data", chunk =&gt; ctx.updateMetadata({ output: String(chunk) }))
+  const result = await waitWithTimeout(child, input.timeoutMs)
+  return truncateShellOutput(result)
+}</code></pre>
+        </section>
+
+        <section id="feynman" class="section feynman-card">
+          <h2>12. 费曼复述区</h2>
+          <ol>
+            <li>为什么 shell tool 不能直接 <code>exec(command)</code>？</li>
+            <li><code>dirs</code>、<code>patterns</code>、<code>always</code> 分别有什么用？</li>
+            <li>用户直接 shell 和模型 tool call shell 的 session 记录有什么差异？</li>
+          </ol>
+        </section>
+
+        <section id="exercise" class="section exercise-card">
+          <h2>13-15. 练习与自测</h2>
+          <ul>
+            <li>入门：解释 <code>CWD</code>、<code>FILES</code>、<code>CMD_FILES</code> 为什么分开。</li>
+            <li>进阶：读 <code>collect</code>，比较 <code>cd /tmp</code> 和 <code>cat /tmp/a.txt</code>。</li>
+            <li>源码追踪：从 <code>SessionTools.resolve</code> 追到 <code>ShellTool.execute</code>。</li>
+            <li>小实现：写一个支持 timeout、abort、输出截断的 shell runner。</li>
+            <li>自测：如果模型想执行 <code>rm -rf /tmp/foo</code>，有哪些代码机会阻止它？</li>
+          </ul>
+        </section>
+
+        <section id="next" class="section next-card">
+          <h2>16. 下一步阅读建议</h2>
+          <p>继续读 “模型 Provider / LLM 调用”。Shell 是 agent 的行动能力，Provider 章会说明模型如何拿到工具 schema 并流式返回 tool call。</p>
+        </section>
+
+        <nav class="footer-nav">
+          <a href="../index.html">返回首页</a>
+          <span> · </span>
+          <a href="../markdown/07-shell-execution.md">查看 Markdown</a>
+        </nav>
+      </div>
+    </main>
+  </body>
+</html>

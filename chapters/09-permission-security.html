@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>权限、审批、安全边界 - OpenCode Agent 源码学习站点</title>
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <h1 class="chapter-title">权限、审批、安全边界</h1>
+        <p class="chapter-subtitle">理解 tool runtime 如何用 allow/deny/ask、pending request 和事件总线保护 agent 行动。</p>
+        <div class="chapter-meta">
+          <span class="badge">章节 09</span>
+          <span class="badge">难度：中等</span>
+          <span class="badge">预计阅读：40 分钟</span>
+          <span class="badge">源码模块：2.9 权限、审批、安全边界</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="toc">
+        <h2>本章目录</h2>
+        <ol>
+          <li><a href="#summary">总结</a></li>
+          <li><a href="#path">源码路径</a></li>
+          <li><a href="#flow">整体链路</a></li>
+          <li><a href="#source">源码讲解</a></li>
+          <li><a href="#ts">TS 语法</a></li>
+          <li><a href="#patterns">架构思想</a></li>
+          <li><a href="#mini">mini agent</a></li>
+          <li><a href="#feynman">复述</a></li>
+          <li><a href="#exercise">练习</a></li>
+          <li><a href="#next">下一步</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="summary" class="section summary-card">
+          <h2>0-1. 学习目标与一句话</h2>
+          <p>权限系统是 tool runtime 的安全闸门：工具调用 <code>ctx.ask</code>，权限服务按 ruleset 和已批准记录决定 allow、deny 或发布 <code>permission.asked</code> 等用户回复。</p>
+          <p>来源：<code>packages/opencode/src/session/tools.ts:64-72</code>、<code>packages/opencode/src/permission/index.ts:161-196</code>、<code>packages/opencode/src/permission/evaluate.ts:9-15</code>。</p>
+        </section>
+
+        <section id="path" class="section source-card">
+          <h2>2-5. 它的位置与最小源码路径</h2>
+          <p class="card-title">源码路径卡片</p>
+          <ol>
+            <li><code>permission/index.ts:19-45</code>：Action、Rule、Request。</li>
+            <li><code>permission/evaluate.ts:9-15</code>：最后匹配规则决定 action，默认 ask。</li>
+            <li><code>permission/index.ts:161-196</code>：ask 创建 pending request 并等待 Deferred。</li>
+            <li><code>permission/index.ts:198-254</code>：reply 处理 once/always/reject。</li>
+            <li><code>session/tools.ts:64-72</code>：tool context 接入权限服务。</li>
+            <li><code>agent/agent.ts:103-160</code>：默认 agent 和 plan agent 权限。</li>
+            <li><code>cli/cmd/run.ts:736-755</code>：非交互 CLI 默认 reject。</li>
+          </ol>
+        </section>
+
+        <section id="flow" class="section">
+          <h2>6. 用户输入到 agent 行动的整体链路</h2>
+          <pre><code>model emits tool-call
+  -&gt; tool execute(params, ctx)
+  -&gt; ctx.ask({ permission, patterns })
+  -&gt; Permission.ask
+  -&gt; evaluate ruleset + approved
+     - allow: continue
+     - deny: throw DeniedError
+     - ask: publish permission.asked and wait
+  -&gt; UI/CLI replies once/always/reject
+  -&gt; Deferred succeed/fail
+  -&gt; tool continues or fails</code></pre>
+          <div class="java-card">
+            <p class="card-title">Java 类比</p>
+            <p><code>Rule</code> 像 Spring Security 的配置属性；<code>evaluate</code> 像 voter；<code>Permission.ask</code> 像可异步等待用户批准的 AccessDecisionManager；<code>Deferred</code> 像 <code>CompletableFuture</code>。</p>
+          </div>
+        </section>
+
+        <section id="source" class="section">
+          <h2>7. 核心源码逐段讲解</h2>
+          <h3>权限类型</h3>
+          <pre><code>export const Action = Schema.Literals(["allow", "deny", "ask"])
+
+export const Rule = Schema.Struct({
+  permission: Schema.String,
+  pattern: Schema.String,
+  action: Action,
+})
+
+export class Request extends Schema.Class&lt;Request&gt;("PermissionRequest")({
+  id: PermissionID,
+  sessionID: SessionID,
+  permission: Schema.String,
+  patterns: Schema.Array(Schema.String),
+  metadata: Schema.Record(Schema.String, Schema.Unknown),
+  always: Schema.Array(Schema.String),
+  tool: Schema.optional(Schema.Struct({ messageID: MessageID, callID: Schema.String })),
+}) {}</code></pre>
+          <p>路径：<code>packages/opencode/src/permission/index.ts:19-45</code>。</p>
+
+          <h3>规则计算</h3>
+          <pre><code>const match = rules.findLast(
+  (rule) =&gt; Wildcard.match(permission, rule.permission) &amp;&amp; Wildcard.match(pattern, rule.pattern),
+)
+return match ?? { action: "ask", permission, pattern: "*" }</code></pre>
+          <p>路径：<code>packages/opencode/src/permission/evaluate.ts:11-15</code>。后写规则优先，默认 ask。</p>
+
+          <h3>ask</h3>
+          <pre><code>for (const pattern of request.patterns) {
+  const rule = evaluate(request.permission, pattern, ruleset, approved)
+  if (rule.action === "deny") return yield* new DeniedError(...)
+  if (rule.action === "allow") continue
+  needsAsk = true
+}
+
+if (!needsAsk) return
+const deferred = yield* Deferred.make&lt;void, RejectedError | CorrectedError&gt;()
+pending.set(id, { info, deferred })
+yield* bus.publish(Event.Asked, info)
+return yield* Deferred.await(deferred)</code></pre>
+          <p>路径：<code>packages/opencode/src/permission/index.ts:161-196</code>。</p>
+
+          <h3>reply</h3>
+          <pre><code>if (input.reply === "reject") {
+  yield* Deferred.fail(existing.deferred, new RejectedError())
+  for (const [id, item] of pending.entries()) {
+    if (item.info.sessionID !== existing.info.sessionID) continue
+    pending.delete(id)
+    yield* Deferred.fail(item.deferred, new RejectedError())
+  }
+  return
+}
+
+yield* Deferred.succeed(existing.deferred, undefined)
+if (input.reply === "once") return</code></pre>
+          <p>路径：<code>packages/opencode/src/permission/index.ts:210-230</code>。</p>
+
+          <h3>默认权限</h3>
+          <pre><code>const defaults = Permission.fromConfig({
+  "*": "allow",
+  doom_loop: "ask",
+  external_directory: { "*": "ask", ...whitelisted },
+  question: "deny",
+  plan_enter: "deny",
+  plan_exit: "deny",
+  repo_clone: "deny",
+  read: {
+    "*": "allow",
+    "*.env": "ask",
+    "*.env.*": "ask",
+    "*.env.example": "allow",
+  },
+})</code></pre>
+          <p>路径：<code>packages/opencode/src/agent/agent.ts:103-122</code>。</p>
+        </section>
+
+        <section id="ts" class="section">
+          <h2>8. 关键 TypeScript 语法复习</h2>
+          <ul>
+            <li><code>Schema.Literals(["allow", "deny", "ask"])</code>：类似 Java enum。</li>
+            <li><code>Schema.Class</code>：运行时 schema + TS 类型 + class。</li>
+            <li><code>Schema.optional</code>：可选字段，运行时可能不存在。</li>
+            <li><code>const { ruleset, ...request } = input</code>：对象 rest。</li>
+            <li><code>findLast</code>：后面的规则优先。</li>
+            <li><code>{ -readonly [K in keyof _Info]: _Info[K] }</code>：mapped type 去 readonly。</li>
+          </ul>
+        </section>
+
+        <section id="patterns" class="section">
+          <h2>9-10. 架构思想与模块协作</h2>
+          <ul>
+            <li>Policy engine：<code>evaluate</code> 计算 action。</li>
+            <li>Event bus：<code>permission.asked/replied</code> 解耦 UI 和工具执行。</li>
+            <li>Async gate：<code>Deferred.await</code> 暂停 tool execution。</li>
+            <li>Layered ruleset：agent/session/approved 多层规则合并。</li>
+            <li>Fail closed：默认 ask，非交互 CLI 默认 reject。</li>
+          </ul>
+        </section>
+
+        <section id="mini" class="section">
+          <h2>11. mini agent 对应代码</h2>
+          <pre><code>async function ask(input) {
+  for (const pattern of input.patterns) {
+    const rule = evaluate(input.permission, pattern, input.ruleset)
+    if (rule.action === "deny") throw new Error("permission denied")
+    if (rule.action === "ask") {
+      const request = createPendingRequest(input)
+      eventBus.emit("permission.asked", request)
+      return await request.deferred
+    }
+  }
+}</code></pre>
+        </section>
+
+        <section id="feynman" class="section feynman-card">
+          <h2>12. 费曼复述区</h2>
+          <ol>
+            <li>allow、deny、ask 对 tool 执行有什么影响？</li>
+            <li>为什么 evaluate 用 findLast？</li>
+            <li>ctx.ask 和 Permission.ask 的边界是什么？</li>
+            <li>always 除了放行当前请求，还会影响什么？</li>
+          </ol>
+        </section>
+
+        <section id="exercise" class="section exercise-card">
+          <h2>13-15. 练习与自测</h2>
+          <ul>
+            <li>入门：画出 <code>Action/Rule/Request</code> 字段表。</li>
+            <li>进阶：解释 reject 为什么拒绝同 session 的其它 pending request。</li>
+            <li>源码追踪：从 <code>EditTool.execute</code> 追到 <code>Permission.ask</code>。</li>
+            <li>小实现：写一个支持 once/always/reject 的 mini permission service。</li>
+            <li>自测：为什么不能只靠 prompt 告诉模型不要乱操作？</li>
+          </ul>
+        </section>
+
+        <section id="next" class="section next-card">
+          <h2>16. 下一步阅读建议</h2>
+          <p>继续读 “LSP / 诊断 / 上下文增强”。权限负责能不能做，LSP 负责做完以后如何把代码反馈带回 agent。</p>
+        </section>
+
+        <nav class="footer-nav">
+          <a href="../index.html">返回首页</a>
+          <span> · </span>
+          <a href="../markdown/09-permission-security.md">查看 Markdown</a>
+        </nav>
+      </div>
+    </main>
+  </body>
+</html>

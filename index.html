@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenCode Agent 源码学习站点</title>
+    <link rel="stylesheet" href="assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <h1 class="site-title">OpenCode Agent 源码学习站点</h1>
+        <p class="site-subtitle">
+          这是一个离线源码学习站点，面向 Java 开发者，用 OpenCode 的真实 TypeScript 源码学习 AI coding agent 架构、
+          agent loop、tool calling、LLM provider、权限边界和工程组织方式。
+        </p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="toc">
+        <h2>目录</h2>
+        <ol>
+          <li><a href="#chapters">章节列表</a></li>
+          <li><a href="#routes">推荐学习路线</a></li>
+          <li><a href="#data">数据文件</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section class="section summary-card">
+          <p class="card-title">站点使用方式</p>
+          <p>
+            先从首页选择章节。当前已完成本轮指定章节和样章；配置系统保留为待补章节，
+            因为本轮生成顺序没有包含它。
+          </p>
+        </section>
+
+        <section id="chapters" class="section">
+          <h2>章节列表</h2>
+          <div class="chapter-grid">
+            <article class="chapter-card">
+              <h3>01. CLI / 启动入口</h3>
+              <p><strong>学习目标：</strong>理解 opencode 命令如何启动、注册子命令，并把 run/serve 等命令导向统一 runtime。</p>
+              <p><strong>阅读难度：</strong>入门<br /><strong>预计阅读时间：</strong>30 分钟<br /><strong>对应源码模块：</strong>2.1 CLI / 启动入口</p>
+              <div class="chapter-links"><a href="chapters/01-cli-startup.html">HTML</a><a href="markdown/01-cli-startup.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>02. 用户输入与会话</h3>
+              <p><strong>学习目标：</strong>理解 CLI/API 输入如何变成 session、message 和 part，并被后续 agent loop 消费。</p>
+              <p><strong>阅读难度：</strong>中等<br /><strong>预计阅读时间：</strong>35 分钟<br /><strong>对应源码模块：</strong>2.2 用户输入与会话</p>
+              <div class="chapter-links"><a href="chapters/02-session-message.html">HTML</a><a href="markdown/02-session-message.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>03. Agent 核心循环</h3>
+              <p><strong>学习目标：</strong>理解 OpenCode 如何在 session 内反复读取消息、选择模型和工具、调用 LLM、处理 tool call，并决定继续或结束。</p>
+              <p><strong>阅读难度：</strong>较难<br /><strong>预计阅读时间：</strong>55 分钟<br /><strong>对应源码模块：</strong>2.3 Agent 核心循环</p>
+              <div class="chapter-links"><a href="chapters/03-agent-core-loop.html">HTML</a><a href="markdown/03-agent-core-loop.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>04. 模型 Provider / LLM 调用</h3>
+              <p><strong>学习目标：</strong>理解内部消息、system prompt、工具 schema 如何被转换成不同 provider 的模型请求。</p>
+              <p><strong>阅读难度：</strong>较难<br /><strong>预计阅读时间：</strong>50 分钟<br /><strong>对应源码模块：</strong>2.4 模型 Provider / LLM 调用</p>
+              <div class="chapter-links"><a href="chapters/04-llm-provider.html">HTML</a><a href="markdown/04-llm-provider.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>05. Tool 调用系统</h3>
+              <p><strong>学习目标：</strong>理解 Tool 定义、注册、暴露给模型、执行、权限和结果回填的完整机制。</p>
+              <p><strong>阅读难度：</strong>中等<br /><strong>预计阅读时间：</strong>45 分钟<br /><strong>对应源码模块：</strong>2.5 Tool 调用系统</p>
+              <div class="chapter-links"><a href="chapters/05-tool-calling.html">HTML</a><a href="markdown/05-tool-calling.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>06. 文件读写与代码修改</h3>
+              <p><strong>学习目标：</strong>理解 read/edit/write 工具如何解析路径、申请权限、修改文件、格式化并触发诊断。</p>
+              <p><strong>阅读难度：</strong>中等<br /><strong>预计阅读时间：</strong>40 分钟<br /><strong>对应源码模块：</strong>2.6 文件读写与代码修改</p>
+              <div class="chapter-links"><a href="chapters/06-file-editing.html">HTML</a><a href="markdown/06-file-editing.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>07. Shell / 命令执行</h3>
+              <p><strong>学习目标：</strong>理解 shell tool 如何解析命令、识别路径和命令模式、审批并执行进程。</p>
+              <p><strong>阅读难度：</strong>较难<br /><strong>预计阅读时间：</strong>45 分钟<br /><strong>对应源码模块：</strong>2.7 Shell / 命令执行</p>
+              <div class="chapter-links"><a href="chapters/07-shell-execution.html">HTML</a><a href="markdown/07-shell-execution.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>08. LSP / 诊断 / 上下文增强</h3>
+              <p><strong>学习目标：</strong>理解 OpenCode 如何启动 LSP client，并把 diagnostics、hover、definition 等反馈给 agent。</p>
+              <p><strong>阅读难度：</strong>较难<br /><strong>预计阅读时间：</strong>45 分钟<br /><strong>对应源码模块：</strong>2.8 LSP / 诊断 / 上下文增强</p>
+              <div class="chapter-links"><a href="chapters/08-lsp-diagnostics.html">HTML</a><a href="markdown/08-lsp-diagnostics.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>09. 权限、审批、安全边界</h3>
+              <p><strong>学习目标：</strong>理解 allow/deny/ask ruleset 如何保护读写文件、执行命令和外部目录访问。</p>
+              <p><strong>阅读难度：</strong>中等<br /><strong>预计阅读时间：</strong>40 分钟<br /><strong>对应源码模块：</strong>2.9 权限、审批、安全边界</p>
+              <div class="chapter-links"><a href="chapters/09-permission-security.html">HTML</a><a href="markdown/09-permission-security.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card pending">
+              <h3>10. 配置系统</h3>
+              <p><strong>学习目标：</strong>理解全局、项目、环境变量、远程和内联配置如何合并并影响 agent/provider/tool。</p>
+              <p><strong>阅读难度：</strong>较难<br /><strong>预计阅读时间：</strong>45 分钟<br /><strong>对应源码模块：</strong>2.10 配置系统<br /><strong>状态：</strong>待补</p>
+              <div class="chapter-links"><span class="disabled-link">HTML 待生成</span><span class="disabled-link">Markdown 待生成</span></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>11. UI / TUI / Desktop / IDE 相关</h3>
+              <p><strong>学习目标：</strong>理解 CLI/TUI、Web app、Desktop 和 VS Code extension 如何复用同一套 runtime。</p>
+              <p><strong>阅读难度：</strong>中等到较难<br /><strong>预计阅读时间：</strong>35 分钟<br /><strong>对应源码模块：</strong>2.11 UI / TUI / Desktop / IDE 相关</p>
+              <div class="chapter-links"><a href="chapters/11-ui-tui-desktop-ide.html">HTML</a><a href="markdown/11-ui-tui-desktop-ide.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>12. SDK / API / 对外扩展点</h3>
+              <p><strong>学习目标：</strong>理解 HTTP API、generated SDK、plugin hooks 和扩展点如何让外部程序接入 OpenCode。</p>
+              <p><strong>阅读难度：</strong>中等<br /><strong>预计阅读时间：</strong>40 分钟<br /><strong>对应源码模块：</strong>2.12 SDK / API / 对外扩展点</p>
+              <div class="chapter-links"><a href="chapters/12-sdk-api-extension.html">HTML</a><a href="markdown/12-sdk-api-extension.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>13. 测试与工程化</h3>
+              <p><strong>学习目标：</strong>理解 monorepo 构建、类型检查、测试任务和开发规范如何支撑大型 agent 项目。</p>
+              <p><strong>阅读难度：</strong>入门<br /><strong>预计阅读时间：</strong>25 分钟<br /><strong>对应源码模块：</strong>2.13 测试与工程化</p>
+              <div class="chapter-links"><a href="chapters/13-testing-engineering.html">HTML</a><a href="markdown/13-testing-engineering.md">Markdown</a></div>
+            </article>
+
+            <article class="chapter-card">
+              <h3>14. 从 OpenCode 反推 mini coding agent</h3>
+              <p><strong>学习目标：</strong>把 OpenCode 的 CLI、session、LLM、tool、permission 和 processor 源码反推成一个可自己实现的 mini coding agent 闭环。</p>
+              <p><strong>阅读难度：</strong>中等<br /><strong>预计阅读时间：</strong>60 分钟<br /><strong>对应源码模块：</strong>综合实现路线</p>
+              <div class="chapter-links"><a href="chapters/14-mini-coding-agent.html">HTML</a><a href="markdown/14-mini-coding-agent.md">Markdown</a></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="routes" class="section">
+          <h2>推荐学习路线</h2>
+          <div class="route-grid">
+            <article class="route-card">
+              <h3>入门路线</h3>
+              <p>01 CLI / 启动入口 -> 02 用户输入与会话 -> 13 测试与工程化 -> 14 mini agent。</p>
+            </article>
+            <article class="route-card">
+              <h3>Agent 核心路线</h3>
+              <p>02 用户输入与会话 -> 03 Agent 核心循环 -> 04 模型 Provider / LLM 调用 -> 09 权限、审批、安全边界。</p>
+            </article>
+            <article class="route-card">
+              <h3>Tool calling 路线</h3>
+              <p>03 Agent 核心循环 -> 05 Tool 调用系统 -> 06 文件读写与代码修改 -> 07 Shell / 命令执行 -> 08 LSP / 诊断。</p>
+            </article>
+            <article class="route-card">
+              <h3>从 0 实现 mini agent 路线</h3>
+              <p>02 消息模型 -> 03 agent loop -> 05 tool interface -> 04 LLM client -> 09 permission -> 06 文件编辑 -> 14 mini agent。</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="data" class="section source-card">
+          <p class="card-title">站点数据</p>
+          <p>
+            章节元数据在 <a href="data/chapters.json">data/chapters.json</a>，
+            章节到源码路径的映射在 <a href="data/source-map.json">data/source-map.json</a>，
+            生成进度在 <a href="data/progress.json">data/progress.json</a>。
+          </p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

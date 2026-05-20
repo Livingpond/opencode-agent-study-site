@@ -1,0 +1,478 @@
+{
+  "01-cli-startup": {
+    "moduleName": "CLI / 启动入口",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/package.json",
+        "reason": "定义 opencode CLI bin 入口和 package scripts。"
+      },
+      {
+        "path": "packages/opencode/src/index.ts",
+        "reason": "yargs CLI 总入口，注册 run/serve/mcp/acp/TUI 等命令。"
+      },
+      {
+        "path": "packages/opencode/src/cli/cmd/run.ts",
+        "reason": "run 命令把 CLI 文本、文件、session 选项转成 session prompt。"
+      },
+      {
+        "path": "packages/opencode/src/cli/effect-cmd.ts",
+        "reason": "把 yargs handler 包到 Effect runtime，并处理 instance 加载和清理。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/index.ts", "packages/opencode/src/cli/cmd/run.ts"],
+    "importantTypes": ["RunCommand", "CliError"],
+    "importantFunctions": ["effectCmd", "client.session.prompt", "client.session.command"]
+  },
+  "02-session-message": {
+    "moduleName": "用户输入与会话",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/server/routes/instance/httpapi/groups/session.ts",
+        "reason": "定义 Session API 的 payload 和 endpoint。"
+      },
+      {
+        "path": "packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts",
+        "reason": "HTTP handler 调用 SessionPrompt 服务。"
+      },
+      {
+        "path": "packages/opencode/src/session/prompt.ts",
+        "reason": "创建 user message、解析 parts，并启动 loop。"
+      },
+      {
+        "path": "packages/opencode/src/session/session.ts",
+        "reason": "定义 session 信息和持久化相关结构。"
+      },
+      {
+        "path": "packages/opencode/src/session/message-v2.ts",
+        "reason": "定义 message、part、tool state 等核心消息模型。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts", "packages/opencode/src/session/prompt.ts"],
+    "importantTypes": ["PromptInput", "MessageV2.User", "MessageV2.Assistant", "MessageV2.Part", "Session.Info"],
+    "importantFunctions": ["createUserMessage", "SessionPrompt.prompt", "MessageV2.latest"]
+  },
+  "03-agent-core-loop": {
+    "moduleName": "Agent 核心循环",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/session/prompt.ts",
+        "reason": "包含 prompt、loop、runLoop，是 agent 核心状态机。"
+      },
+      {
+        "path": "packages/opencode/src/session/processor.ts",
+        "reason": "消费 LLM stream，并把 text/tool/reasoning 事件写回 message parts。"
+      },
+      {
+        "path": "packages/opencode/src/session/run-state.ts",
+        "reason": "保证同一 session 的 agent run 有 busy/idle/cancel 状态。"
+      },
+      {
+        "path": "packages/opencode/src/session/tools.ts",
+        "reason": "把 registry/MCP tools 包装成模型可调用的 AI SDK tools。"
+      },
+      {
+        "path": "packages/opencode/src/session/llm.ts",
+        "reason": "LLM.stream 的统一入口，负责 streamText/native runtime。"
+      },
+      {
+        "path": "packages/opencode/src/session/llm/ai-sdk.ts",
+        "reason": "把 AI SDK fullStream 事件转成 OpenCode LLMEvent。"
+      },
+      {
+        "path": "packages/opencode/src/session/message-v2.ts",
+        "reason": "定义 ToolPart/ToolState，并提供 latest 计算最近 user/assistant/tasks。"
+      },
+      {
+        "path": "packages/opencode/src/cli/cmd/run.ts",
+        "reason": "非交互 CLI 通过 client.session.prompt 进入 session。"
+      },
+      {
+        "path": "packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts",
+        "reason": "session HTTP prompt handler 进入 SessionPrompt.prompt。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/session/prompt.ts#prompt", "packages/opencode/src/session/prompt.ts#runLoop"],
+    "importantTypes": ["PromptInput", "MessageV2.WithParts", "MessageV2.ToolPart", "SessionProcessor.Handle", "LLM.StreamInput", "SessionRunState.Interface"],
+    "importantFunctions": ["SessionPrompt.prompt", "createUserMessage", "runLoop", "MessageV2.latest", "SessionTools.resolve", "SessionProcessor.create", "SessionProcessor.process", "LLM.stream"]
+  },
+  "04-llm-provider": {
+    "moduleName": "模型 Provider / LLM 调用",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/session/llm.ts",
+        "reason": "统一模型流调用入口。"
+      },
+      {
+        "path": "packages/opencode/src/session/llm/ai-sdk.ts",
+        "reason": "AI SDK event 到 LLMEvent 的适配层。"
+      },
+      {
+        "path": "packages/opencode/src/session/llm/native-runtime.ts",
+        "reason": "native LLM runtime 分支。"
+      },
+      {
+        "path": "packages/opencode/src/provider/provider.ts",
+        "reason": "provider/model 解析、SDK 加载和默认模型选择。"
+      },
+      {
+        "path": "packages/opencode/src/provider/transform.ts",
+        "reason": "按 provider/model 调整 message/schema/options。"
+      },
+      {
+        "path": "packages/llm/src/protocols/index.ts",
+        "reason": "底层 LLM 协议集合入口。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/session/llm.ts#stream", "packages/opencode/src/provider/provider.ts#getLanguage"],
+    "importantTypes": ["LLM.StreamInput", "Provider.Model", "Provider.Interface"],
+    "importantFunctions": ["streamText", "LLMAISDK.toLLMEvents", "resolveSDK", "ProviderTransform.message"]
+  },
+  "05-tool-calling": {
+    "moduleName": "Tool 调用系统",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/tool/tool.ts",
+        "reason": "定义 Tool.Def、Tool.Context 和 Tool.define。"
+      },
+      {
+        "path": "packages/opencode/src/tool/registry.ts",
+        "reason": "注册和筛选内置/插件工具。"
+      },
+      {
+        "path": "packages/opencode/src/session/tools.ts",
+        "reason": "把工具转成 AI SDK tool，并处理执行前后 hook。"
+      },
+      {
+        "path": "packages/plugin/src/tool.ts",
+        "reason": "外部插件工具 API。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/tool/registry.ts#tools", "packages/opencode/src/session/tools.ts#resolve"],
+    "importantTypes": ["Tool.Def", "Tool.Context", "Tool.ExecuteResult"],
+    "importantFunctions": ["Tool.define", "Tool.init", "ToolRegistry.tools", "SessionTools.resolve"]
+  },
+  "06-file-editing": {
+    "moduleName": "文件读写与代码修改",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/tool/read.ts",
+        "reason": "读取文件/目录并检查 read 权限。"
+      },
+      {
+        "path": "packages/opencode/src/tool/edit.ts",
+        "reason": "基于 oldString/newString 修改文件并生成 diff。"
+      },
+      {
+        "path": "packages/opencode/src/tool/write.ts",
+        "reason": "写入文件并触发格式化和诊断。"
+      },
+      {
+        "path": "packages/opencode/src/file/",
+        "reason": "文件事件和文件系统相关服务目录；需要后续按章节细读。"
+      },
+      {
+        "path": "packages/opencode/src/format/",
+        "reason": "格式化服务目录；需要后续按章节细读。"
+      },
+      {
+        "path": "packages/opencode/src/lsp/lsp.ts",
+        "reason": "修改后触发 diagnostics。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/tool/read.ts#ReadTool", "packages/opencode/src/tool/edit.ts#EditTool", "packages/opencode/src/tool/write.ts#WriteTool"],
+    "importantTypes": ["ReadTool.Parameters", "EditTool.Parameters"],
+    "importantFunctions": ["ctx.ask", "lsp.touchFile", "lsp.diagnostics", "format.file"]
+  },
+  "07-shell-execution": {
+    "moduleName": "Shell / 命令执行",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/tool/shell.ts",
+        "reason": "shell tool 的 parse/collect/ask/run 主实现。"
+      },
+      {
+        "path": "packages/opencode/src/session/prompt.ts",
+        "reason": "用户直接 shell 请求的 session 处理。"
+      },
+      {
+        "path": "packages/opencode/src/session/run-state.ts",
+        "reason": "管理 shell 和 agent run 的 busy/idle/cancel 状态。"
+      },
+      {
+        "path": "packages/opencode/src/permission/index.ts",
+        "reason": "shell 执行前权限审批。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/tool/shell.ts#execute", "packages/opencode/src/session/prompt.ts#shell"],
+    "importantTypes": ["ShellTool", "ShellInput"],
+    "importantFunctions": ["parse", "collect", "ask", "run", "SessionRunState.startShell"]
+  },
+  "08-lsp-diagnostics": {
+    "moduleName": "LSP / 诊断 / 上下文增强",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/lsp/lsp.ts",
+        "reason": "LSP service interface、client 管理和 diagnostics。"
+      },
+      {
+        "path": "packages/opencode/src/lsp/client.ts",
+        "reason": "LSP JSON-RPC client 创建和通信。"
+      },
+      {
+        "path": "packages/opencode/src/lsp/diagnostic.ts",
+        "reason": "诊断输出格式化。"
+      },
+      {
+        "path": "packages/opencode/src/tool/edit.ts",
+        "reason": "编辑后触发 LSP touch/diagnostics。"
+      },
+      {
+        "path": "packages/opencode/src/tool/write.ts",
+        "reason": "写入后触发 LSP touch/diagnostics。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/lsp/lsp.ts#touchFile", "packages/opencode/src/lsp/lsp.ts#diagnostics"],
+    "importantTypes": ["LSP.Interface", "LSP.Status", "LSP.Symbol", "LSP.DocumentSymbol"],
+    "importantFunctions": ["getClients", "touchFile", "diagnostics", "LSP.Diagnostic.report"]
+  },
+  "09-permission-security": {
+    "moduleName": "权限、审批、安全边界",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/permission/index.ts",
+        "reason": "权限 request/reply/ask/merge 主实现。"
+      },
+      {
+        "path": "packages/opencode/src/permission/evaluate.ts",
+        "reason": "ruleset 计算 allow/deny/ask。"
+      },
+      {
+        "path": "packages/opencode/src/permission/schema.ts",
+        "reason": "PermissionID schema。"
+      },
+      {
+        "path": "packages/opencode/src/agent/agent.ts",
+        "reason": "默认 agent 权限策略。"
+      },
+      {
+        "path": "packages/opencode/src/session/tools.ts",
+        "reason": "工具执行上下文里合并 agent/session permission。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/permission/index.ts#ask", "packages/opencode/src/session/tools.ts#context.ask"],
+    "importantTypes": ["Permission.Action", "Permission.Rule", "Permission.Ruleset", "Permission.Request"],
+    "importantFunctions": ["Permission.ask", "Permission.reply", "Permission.merge", "evaluate"]
+  },
+  "10-config-system": {
+    "moduleName": "配置系统",
+    "status": "pending",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/config/config.ts",
+        "reason": "Config.Info schema 和 loadInstanceState。"
+      },
+      {
+        "path": "packages/opencode/src/config/agent.ts",
+        "reason": "agent config schema 和 markdown agent 加载。"
+      },
+      {
+        "path": "packages/opencode/src/config/permission.ts",
+        "reason": "权限配置结构。"
+      },
+      {
+        "path": "packages/opencode/src/config/plugin.ts",
+        "reason": "插件配置结构。"
+      },
+      {
+        "path": "packages/opencode/src/project/bootstrap.ts",
+        "reason": "实例启动时先加载 config，再初始化 plugin/LSP/format/file 等服务。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/config/config.ts#loadInstanceState", "packages/opencode/src/project/bootstrap.ts#run"],
+    "importantTypes": ["Config.Info", "Config.Interface", "ConfigAgent.AgentSchema"],
+    "importantFunctions": ["config.get", "loadInstanceState", "mergeConfigConcatArrays", "plugin.init"]
+  },
+  "11-ui-tui-desktop-ide": {
+    "moduleName": "UI / TUI / Desktop / IDE 相关",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/cli/cmd/run.ts",
+        "reason": "run 命令的 interactive/local 模式和 event loop。"
+      },
+      {
+        "path": "packages/opencode/src/cli/cmd/tui/",
+        "reason": "TUI 实现目录；需要后续按章节细读。"
+      },
+      {
+        "path": "packages/app/package.json",
+        "reason": "Web app package 入口信息。"
+      },
+      {
+        "path": "packages/ui/package.json",
+        "reason": "共享 UI package 信息。"
+      },
+      {
+        "path": "packages/desktop/package.json",
+        "reason": "Desktop Electron package 信息。"
+      },
+      {
+        "path": "sdks/vscode/package.json",
+        "reason": "VS Code extension command 声明。"
+      },
+      {
+        "path": "sdks/vscode/src/extension.ts",
+        "reason": "VS Code extension 入口。"
+      }
+    ],
+    "entryPoints": [
+      "packages/opencode/src/cli/cmd/run.ts#run",
+      "packages/opencode/src/cli/cmd/run/runtime.ts#runInteractiveMode",
+      "packages/opencode/src/cli/cmd/tui/app.tsx#tui",
+      "packages/desktop/src/main/index.ts#createWindow",
+      "sdks/vscode/src/extension.ts#activate"
+    ],
+    "importantTypes": ["ServerConnection.Http", "ServerConnection.Sidecar", "ServerConnection.Ssh"],
+    "importantFunctions": ["runInteractiveMode", "runInteractiveLocalMode", "createOpencodeClient", "startSSE", "spawnLocalServer", "getActiveFile"]
+  },
+  "12-sdk-api-extension": {
+    "moduleName": "SDK / API / 对外扩展点",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/server/server.ts",
+        "reason": "in-process web handler、listen/openapi。"
+      },
+      {
+        "path": "packages/opencode/src/server/routes/instance/httpapi/api.ts",
+        "reason": "组合 InstanceHttpApi/RootHttpApi/EventApi。"
+      },
+      {
+        "path": "packages/opencode/src/server/routes/instance/httpapi/groups/session.ts",
+        "reason": "Session API 声明。"
+      },
+      {
+        "path": "packages/opencode/src/server/routes/instance/httpapi/handlers/session.ts",
+        "reason": "Session API handler。"
+      },
+      {
+        "path": "packages/sdk/js/src/client.ts",
+        "reason": "createOpencodeClient 包装 generated client。"
+      },
+      {
+        "path": "packages/sdk/js/src/server.ts",
+        "reason": "createOpencodeServer/createOpencodeTui 启动外部进程。"
+      },
+      {
+        "path": "packages/opencode/src/plugin/index.ts",
+        "reason": "插件加载和 hook trigger 服务。"
+      },
+      {
+        "path": "packages/plugin/src/index.ts",
+        "reason": "插件包导出入口。"
+      }
+    ],
+    "entryPoints": ["packages/opencode/src/server/server.ts#Default", "packages/sdk/js/src/client.ts#createOpencodeClient"],
+    "importantTypes": ["OpenCodeHttpApi", "InstanceHttpApi", "Plugin.Interface"],
+    "importantFunctions": ["sessionHandlers", "createOpencodeClient", "createOpencodeServer", "Plugin.trigger"]
+  },
+  "13-testing-engineering": {
+    "moduleName": "测试与工程化",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "package.json",
+        "reason": "根 workspace、scripts 和依赖 catalog。"
+      },
+      {
+        "path": "turbo.json",
+        "reason": "跨 package task graph。"
+      },
+      {
+        "path": "tsconfig.json",
+        "reason": "根 TypeScript 配置。"
+      },
+      {
+        "path": "AGENTS.md",
+        "reason": "项目给 agent 的开发规范。"
+      },
+      {
+        "path": "packages/opencode/package.json",
+        "reason": "核心 runtime package 的 scripts 和 deps。"
+      },
+      {
+        "path": "packages/sdk/js/package.json",
+        "reason": "SDK package 的 build/export 信息。"
+      }
+    ],
+    "entryPoints": ["package.json#scripts", "turbo.json#tasks", "packages/opencode/package.json#scripts", "packages/sdk/js/script/build.ts"],
+    "importantTypes": [],
+    "importantFunctions": ["createClient", "createEmbeddedWebUIBundle", "applyGlobalEvent", "ToolStream.appendOrStart"]
+  },
+  "14-mini-coding-agent": {
+    "moduleName": "从 OpenCode 反推 mini coding agent",
+    "status": "complete",
+    "sourceFiles": [
+      {
+        "path": "packages/opencode/src/cli/cmd/run.ts",
+        "reason": "展示 CLI 如何把用户输入交给 session prompt，而不是在入口里实现 agent loop。"
+      },
+      {
+        "path": "packages/opencode/src/session/prompt.ts",
+        "reason": "核心 prompt/runLoop，实现从 user message 到 LLM/tool/result 再循环的主状态机。"
+      },
+      {
+        "path": "packages/opencode/src/session/llm.ts",
+        "reason": "定义 LLM stream 输入和服务接口，可反推 mini LlmClient。"
+      },
+      {
+        "path": "packages/opencode/src/tool/tool.ts",
+        "reason": "定义 Tool.Context、ExecuteResult、Def，是 mini tool interface 的主要来源。"
+      },
+      {
+        "path": "packages/opencode/src/session/tools.ts",
+        "reason": "把内部工具适配成模型可调用工具，并注入权限上下文。"
+      },
+      {
+        "path": "packages/opencode/src/permission/index.ts",
+        "reason": "allow/deny/ask 权限闸门，可反推 mini PermissionService。"
+      },
+      {
+        "path": "packages/opencode/src/tool/read.ts",
+        "reason": "最小 read_file 工具的参数和读取行为来源。"
+      },
+      {
+        "path": "packages/opencode/src/tool/edit.ts",
+        "reason": "最小 edit_file 工具的 oldString/newString 模型和权限点来源。"
+      },
+      {
+        "path": "packages/opencode/src/tool/shell.ts",
+        "reason": "最小 run_shell 工具的命令解析、安全扫描和权限点来源。"
+      },
+      {
+        "path": "packages/opencode/src/session/processor.ts",
+        "reason": "tool result 如何写回 message part，并影响下一轮推理。"
+      },
+      {
+        "path": "packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts",
+        "reason": "如果 mini agent 后续需要 UI，可参考 SSE event 输出。"
+      }
+    ],
+    "entryPoints": [
+      "packages/opencode/src/cli/cmd/run.ts#client.session.prompt",
+      "packages/opencode/src/session/prompt.ts#prompt",
+      "packages/opencode/src/session/prompt.ts#runLoop"
+    ],
+    "importantTypes": ["LLM.StreamInput", "Tool.Context", "Tool.Def", "Tool.ExecuteResult", "Permission.Request"],
+    "importantFunctions": ["SessionPrompt.prompt", "runLoop", "SessionTools.resolve", "Permission.ask", "completeToolCall", "eventResponse"]
+  }
+}

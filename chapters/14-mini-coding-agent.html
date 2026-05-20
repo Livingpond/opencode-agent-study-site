@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>从 OpenCode 反推 mini coding agent - OpenCode Agent 源码学习站点</title>
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header-inner">
+        <h1 class="chapter-title">从 OpenCode 反推 mini coding agent</h1>
+        <p class="chapter-subtitle">把 OpenCode 的真实源码压缩成一个你可以自己实现的最小 coding agent 架构。</p>
+        <div class="chapter-meta">
+          <span class="badge">难度：中等</span>
+          <span class="badge">预计阅读：60 分钟</span>
+          <span class="badge">对应模块：综合实现路线</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="toc">
+        <h2>目录</h2>
+        <ol>
+          <li><a href="#goals">学习目标</a></li>
+          <li><a href="#sentence">一句话</a></li>
+          <li><a href="#path">源码路径</a></li>
+          <li><a href="#chain">完整链路</a></li>
+          <li><a href="#source">源码讲解</a></li>
+          <li><a href="#ts">TS 语法</a></li>
+          <li><a href="#patterns">设计思想</a></li>
+          <li><a href="#mini">实现顺序</a></li>
+          <li><a href="#feynman">费曼复述</a></li>
+          <li><a href="#exercise">练习题</a></li>
+          <li><a href="#next">下一步</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+        <section id="goals" class="section summary-card">
+          <p class="card-title">0. 本章学习目标</p>
+          <p>你会从 OpenCode 的真实 CLI、session、LLM、tool、permission 和 processor 源码里反推出一个 mini coding agent 的最小闭环。</p>
+        </section>
+
+        <section id="sentence" class="section">
+          <h2>1. 一句话讲明白</h2>
+          <p>一个 mini coding agent 的最小闭环是：接收用户输入，保存成 session message，调用 LLM，发现 tool call，执行工具并写回 tool result，再把结果发回 LLM，直到模型停止。</p>
+          <p>来源：<code>run.ts:768-803</code>、<code>prompt.ts:1211-1489</code>、<code>llm.ts:39-60</code>、<code>tool.ts:16-45</code>、<code>session/tools.ts:42-115</code>、<code>processor.ts:451-500</code>。</p>
+        </section>
+
+        <section class="section">
+          <h2>2. 它在 OpenCode agent 中的位置</h2>
+          <p>这章是总装图。OpenCode 有 CLI、TUI、Desktop、VS Code、SDK/API、多 provider、MCP、插件、LSP、权限和事件流。mini agent 第一版只保留闭环。</p>
+          <pre><code>CLI -&gt; Session -&gt; LLM -&gt; Tool Registry -&gt; Tool Execution -&gt; Tool Result -&gt; LLM -&gt; Final Answer</code></pre>
+        </section>
+
+        <section class="section">
+          <h2>3. 生活类比</h2>
+          <p>用户是产品经理，Session 是项目记录本，LLM 是主程，Tool 是具体工种，Permission 是安全负责人，Processor 是会议纪要员。</p>
+        </section>
+
+        <section class="section java-card">
+          <p class="card-title">4. Java 开发者类比</p>
+          <table>
+            <thead><tr><th>Mini agent</th><th>Java 类比</th><th>源码依据</th></tr></thead>
+            <tbody>
+              <tr><td>CLI 输入</td><td><code>main</code> / Picocli command</td><td><code>run.ts:768-803</code></td></tr>
+              <tr><td>SessionPrompt</td><td>Application Service</td><td><code>prompt.ts:1211-1230</code></td></tr>
+              <tr><td>Agent loop</td><td>State machine / workflow engine</td><td><code>prompt.ts:1248-1489</code></td></tr>
+              <tr><td>LLM service</td><td>Gateway / client adapter</td><td><code>llm.ts:39-60</code></td></tr>
+              <tr><td>Tool registry</td><td>Strategy registry</td><td><code>session/tools.ts:75-115</code></td></tr>
+              <tr><td>Permission</td><td>Security interceptor + async approval</td><td><code>permission/index.ts:161-195</code></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="path" class="section source-card">
+          <p class="card-title">5. 最小源码路径</p>
+          <ol>
+            <li><code>packages/opencode/src/cli/cmd/run.ts:768-803</code></li>
+            <li><code>packages/opencode/src/session/prompt.ts:1211-1230</code></li>
+            <li><code>packages/opencode/src/session/prompt.ts:1248-1489</code></li>
+            <li><code>packages/opencode/src/session/llm.ts:39-60</code></li>
+            <li><code>packages/opencode/src/tool/tool.ts:16-45</code></li>
+            <li><code>packages/opencode/src/session/tools.ts:42-115</code></li>
+            <li><code>packages/opencode/src/permission/index.ts:161-195</code></li>
+            <li><code>packages/opencode/src/session/processor.ts:451-500</code></li>
+          </ol>
+        </section>
+
+        <section id="chain" class="section">
+          <h2>6. 用户输入到 agent 行动的整体链路</h2>
+          <pre><code>用户输入 prompt
+  -&gt; run.ts 调用 client.session.prompt
+  -&gt; SessionPrompt.prompt 创建 user message
+  -&gt; loop 读取 session message
+  -&gt; 选择 agent/model
+  -&gt; 创建 assistant message
+  -&gt; SessionTools.resolve 暴露工具
+  -&gt; handle.process 调用 LLM stream
+  -&gt; LLM 输出 text/tool-call/tool-result event
+  -&gt; processor 写回 text/tool part
+  -&gt; 工具执行时通过 ctx.ask 走权限
+  -&gt; tool result 写回 message part
+  -&gt; loop 再次把 tool result 发给 LLM
+  -&gt; 模型 finish 后退出</code></pre>
+        </section>
+
+        <section id="source" class="section">
+          <h2>7. 核心源码逐段讲解</h2>
+
+          <h3>7.1 CLI 只负责送输入</h3>
+          <p>路径：<code>packages/opencode/src/cli/cmd/run.ts:768-803</code></p>
+          <pre><code>const result = await client.session.prompt({
+  sessionID,
+  agent,
+  model,
+  variant: args.variant,
+  parts: [...files, { type: "text", text: message }],
+})</code></pre>
+          <p>CLI 不实现 agent loop，只把输入整理成 parts 并调用 session service。</p>
+
+          <h3>7.2 prompt 写入 user message</h3>
+          <p>路径：<code>packages/opencode/src/session/prompt.ts:1211-1230</code></p>
+          <pre><code>const session = yield* sessions.get(input.sessionID).pipe(Effect.orDie)
+yield* revert.cleanup(session)
+const message = yield* createUserMessage(input)
+yield* sessions.touch(input.sessionID)
+
+if (input.noReply === true) return message
+return yield* loop({ sessionID: input.sessionID })</code></pre>
+          <p>prompt 的职责是创建用户消息并启动 loop，不把所有推理逻辑塞在入口函数里。</p>
+
+          <h3>7.3 loop 判断继续还是结束</h3>
+          <p>路径：<code>packages/opencode/src/session/prompt.ts:1248-1276</code></p>
+          <pre><code>while (true) {
+  yield* status.set(sessionID, { type: "busy" })
+  let msgs = yield* MessageV2.filterCompactedEffect(sessionID)
+  const { user: lastUser, assistant: lastAssistant, finished: lastFinished, tasks } = MessageV2.latest(msgs)
+
+  const hasToolCalls =
+    lastAssistantMsg?.parts.some((part) =&gt; part.type === "tool" &amp;&amp; !part.metadata?.providerExecuted) ?? false
+
+  if (lastAssistant?.finish &amp;&amp; !["tool-calls"].includes(lastAssistant.finish) &amp;&amp; !hasToolCalls) {
+    break
+  }
+}</code></pre>
+          <p>agent 不是调用一次 LLM，而是围绕 message state 的状态机。</p>
+
+          <h3>7.4 每一步准备 assistant、tools 和 LLM 输入</h3>
+          <p>路径：<code>packages/opencode/src/session/prompt.ts:1325-1440</code></p>
+          <pre><code>const msg: MessageV2.Assistant = {
+  id: MessageID.ascending(),
+  parentID: lastUser.id,
+  role: "assistant",
+  agent: agent.name,
+  modelID: model.id,
+  providerID: model.providerID,
+  sessionID,
+}
+yield* sessions.updateMessage(msg)
+
+const handle = yield* processor.create({ assistantMessage: msg, sessionID, model })
+const tools = yield* SessionTools.resolve({ agent, session, model, processor: handle, messages: msgs, promptOps })
+const result = yield* handle.process({ user: lastUser, agent, sessionID, system, messages: modelMsgs, tools, model })</code></pre>
+
+          <h3>7.5 LLM 网关的输入</h3>
+          <p>路径：<code>packages/opencode/src/session/llm.ts:39-60</code></p>
+          <pre><code>export type StreamInput = {
+  user: MessageV2.User
+  sessionID: string
+  model: Provider.Model
+  agent: Agent.Info
+  system: string[]
+  messages: ModelMessage[]
+  tools: Record&lt;string, Tool&gt;
+  toolChoice?: "auto" | "required" | "none"
+}
+
+export interface Interface {
+  readonly stream: (input: StreamInput) =&gt; Stream.Stream&lt;LLMEvent, unknown&gt;
+}</code></pre>
+          <p>mini agent 可以把它简化成 <code>LlmClient.complete({ messages, tools })</code>，但要保留 tools 参数。</p>
+
+          <h3>7.6 Tool 接口</h3>
+          <p>路径：<code>packages/opencode/src/tool/tool.ts:16-45</code></p>
+          <pre><code>export type Context = {
+  sessionID: SessionID
+  messageID: MessageID
+  agent: string
+  abort: AbortSignal
+  messages: MessageV2.WithParts[]
+  metadata(input: { title?: string; metadata?: M }): Effect.Effect&lt;void&gt;
+  ask(input: Omit&lt;Permission.Request, "id" | "sessionID" | "tool"&gt;): Effect.Effect&lt;void&gt;
+}
+
+export interface Def {
+  id: string
+  description: string
+  parameters: Parameters
+  execute(args, ctx: Context): Effect.Effect&lt;ExecuteResult&gt;
+}</code></pre>
+          <p>工具不只是函数，它带 schema、上下文、权限和结果 metadata。</p>
+
+          <h3>7.7 工具适配和执行</h3>
+          <p>路径：<code>packages/opencode/src/session/tools.ts:42-115</code></p>
+          <pre><code>const context = (args, options): Tool.Context =&gt; ({
+  sessionID: input.session.id,
+  messageID: input.processor.message.id,
+  callID: options.toolCallId,
+  ask: (req) =&gt;
+    permission.ask({
+      ...req,
+      sessionID: input.session.id,
+      tool: { messageID: input.processor.message.id, callID: options.toolCallId },
+      ruleset: Permission.merge(input.agent.permission, input.session.permission ?? []),
+    }),
+})
+
+tools[item.id] = tool({
+  description: item.description,
+  inputSchema: jsonSchema(schema),
+  execute(args, options) {
+    const ctx = context(args, options)
+    const result = yield* item.execute(args, ctx)
+    return output
+  },
+})</code></pre>
+          <p>这是 Adapter：内部 Tool 被包装成模型 provider 能调用的 tool。</p>
+
+          <h3>7.8 权限闸门</h3>
+          <p>路径：<code>packages/opencode/src/permission/index.ts:161-195</code></p>
+          <pre><code>for (const pattern of request.patterns) {
+  const rule = evaluate(request.permission, pattern, ruleset, approved)
+  if (rule.action === "deny") return yield* new DeniedError(...)
+  if (rule.action === "allow") continue
+  needsAsk = true
+}
+
+if (!needsAsk) return
+
+const deferred = yield* Deferred.make&lt;void, RejectedError | CorrectedError&gt;()
+pending.set(id, { info, deferred })
+yield* bus.publish(Event.Asked, info)
+return yield* Effect.ensuring(Deferred.await(deferred), Effect.sync(() =&gt; pending.delete(id)))</code></pre>
+
+          <h3>7.9 工具结果写回</h3>
+          <p>路径：<code>packages/opencode/src/session/processor.ts:451-500</code></p>
+          <pre><code>case "tool-result": {
+  const toolCall = yield* readToolCall(value.id)
+  const rawOutput = toolResultOutput(value)
+  const output = {
+    ...rawOutput,
+    attachments: attachments.length ? attachments : undefined,
+  }
+  yield* completeToolCall(value.id, output)
+  return
+}</code></pre>
+          <p>工具结果必须回到 message history，下一轮 LLM 才知道工具执行了什么。</p>
+        </section>
+
+        <section id="ts" class="section">
+          <h2>8. 关键 TypeScript 语法复习</h2>
+          <ul>
+            <li><code>Record&lt;string, Tool&gt;</code>：类似 Java <code>Map&lt;String, Tool&gt;</code>。来源：<code>llm.ts:49</code>。</li>
+            <li>literal union：<code>"auto" | "required" | "none"</code>，类似轻量 enum。来源：<code>llm.ts:51</code>。</li>
+            <li>optional property：<code>small?: boolean</code>，字段可能是 <code>undefined</code>。来源：<code>llm.ts:48</code>。</li>
+            <li>泛型默认值：<code>M extends Metadata = Metadata</code>。来源：<code>tool.ts:28</code>。</li>
+            <li><code>Omit</code>：从已有类型裁掉字段，类似创建一个 request draft DTO。来源：<code>tool.ts:25</code>。</li>
+            <li><code>as const</code>：保留字面量类型。来源：<code>prompt.ts:1436</code>。</li>
+          </ul>
+        </section>
+
+        <section id="patterns" class="section">
+          <h2>9. 涉及的设计模式和架构思想</h2>
+          <p>这里最重要的是 Controller -> Application Service -> State Machine、Strategy Registry、Adapter、Event Bus、Safety Gate。</p>
+        </section>
+
+        <section class="section">
+          <h2>10. 它如何和 Tool、Provider、Session、文件系统协作</h2>
+          <table>
+            <thead><tr><th>服务</th><th>职责</th><th>OpenCode 对应</th></tr></thead>
+            <tbody>
+              <tr><td>SessionStore</td><td>保存 messages</td><td><code>Session.Service</code>、<code>MessageV2</code></td></tr>
+              <tr><td>AgentLoop</td><td>while 循环，判断停止</td><td><code>SessionPrompt.runLoop</code></td></tr>
+              <tr><td>LlmClient</td><td>调用模型并返回事件</td><td><code>LLM.Service</code></td></tr>
+              <tr><td>ToolRegistry</td><td>管理 read/edit/shell</td><td><code>ToolRegistry.Service</code>、<code>SessionTools.resolve</code></td></tr>
+              <tr><td>PermissionService</td><td>allow/deny/ask</td><td><code>Permission.Service</code></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="mini" class="section">
+          <h2>11. 如果自己实现 mini agent，这一章对应什么代码</h2>
+          <p>下面是教学草图，不是 OpenCode 源码。</p>
+          <pre><code>type Message =
+  | { role: "user"; content: string }
+  | { role: "assistant"; content: string; toolCalls?: ToolCall[]; finish?: "stop" | "tool-calls" }
+  | { role: "tool"; toolCallID: string; content: string }
+
+type ToolDef&lt;TInput = unknown&gt; = {
+  id: string
+  description: string
+  parameters: unknown
+  execute(input: TInput, ctx: ToolContext): Promise&lt;{ output: string }&gt;
+}
+
+async function runLoop(session: Session, llm: LlmClient, tools: Record&lt;string, ToolDef&gt;) {
+  while (true) {
+    const result = await llm.complete({ messages: session.messages, tools })
+    session.messages.push(result.assistant)
+    if (!result.assistant.toolCalls?.length) break
+
+    for (const call of result.assistant.toolCalls) {
+      const tool = tools[call.name]
+      const output = await tool.execute(call.input, makeToolContext(session, call))
+      session.messages.push({ role: "tool", toolCallID: call.id, content: output.output })
+    }
+  }
+}</code></pre>
+          <p>实现顺序：先 fake LLM 跑通闭环，再接真实 provider；先做 <code>read_file</code>，再加 <code>edit_file</code> 和 <code>run_shell</code>。</p>
+        </section>
+
+        <section id="feynman" class="section feynman-card">
+          <p class="card-title">12. 费曼复述区</p>
+          <p>请不用“agent loop”这个词，向一个 Java 同事解释：为什么 coding agent 不能只调用一次 LLM？为什么 tool result 必须写回消息历史？</p>
+          <p>换一种说法：模型像只会发指令的主程。它说“读这个文件”，工具读完后必须把结果告诉主程，主程才能决定下一步。</p>
+        </section>
+
+        <section id="exercise" class="section exercise-card">
+          <p class="card-title">13. 练习题</p>
+          <ul>
+            <li>用 5 句话解释 <code>CLI -&gt; Session -&gt; LLM -&gt; Tool -&gt; LLM</code>。</li>
+            <li>把 OpenCode 的 <code>Tool.Context</code> 简化成你的 <code>ToolContext</code>。</li>
+            <li>实现 <code>ToolRegistry</code>，输入 agent 名称，返回工具集合。</li>
+            <li>写一个 fake LLM：第一次返回 <code>read_file</code> tool call，第二次根据 tool result 回答用户。</li>
+          </ul>
+        </section>
+
+        <section class="section source-card">
+          <p class="card-title">14. 源码追踪任务</p>
+          <ol>
+            <li>从 <code>run.ts:792</code> 追到 <code>prompt.ts:1211</code>。</li>
+            <li>从 <code>prompt.ts:1372</code> 追到 <code>session/tools.ts:75</code>。</li>
+            <li>从 <code>session/tools.ts:93</code> 追到 <code>edit.ts:69</code>。</li>
+            <li>从 <code>edit.ts:98</code> 追到 <code>permission/index.ts:161</code>。</li>
+            <li>从 <code>processor.ts:499</code> 回到 <code>prompt.ts:1461-1477</code>。</li>
+          </ol>
+        </section>
+
+        <section class="section">
+          <h2>15. 面试式自测</h2>
+          <ol>
+            <li>你如何解释 agent loop 和普通 chatbot 的区别？</li>
+            <li>Tool result 为什么必须进入 message history？</li>
+            <li>Tool registry 为什么比 <code>if toolName === ...</code> 更适合扩展？</li>
+            <li>权限系统为什么不应该写死在 <code>edit_file</code> 里？</li>
+            <li>如果 LLM provider 的 tool schema 格式不同，你会在哪一层做适配？</li>
+          </ol>
+        </section>
+
+        <section id="next" class="section next-card">
+          <p class="card-title">16. 下一步阅读建议</p>
+          <p>下一步建议做一个真实 mini agent：先 fake LLM 跑通 loop，再接真实 provider，只开放 <code>read_file</code>，然后逐步加入 <code>edit_file</code>、权限和 <code>run_shell</code>。</p>
+          <p>配置系统本轮没有完整生成；如果要让站点完全覆盖最初大纲，下一章建议补 <code>10-config-system</code>。</p>
+        </section>
+
+        <nav class="footer-nav">
+          <a href="../index.html">返回首页</a>
+        </nav>
+      </div>
+    </main>
+  </body>
+</html>
