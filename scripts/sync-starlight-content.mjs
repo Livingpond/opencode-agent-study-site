@@ -21,6 +21,7 @@ const sourceHighlighter = createHighlighter({
     'css',
     'html',
     'javascript',
+    'java',
     'json',
     'jsonc',
     'jsx',
@@ -33,6 +34,28 @@ const sourceHighlighter = createHighlighter({
     'yaml',
   ],
 });
+
+const fenceLanguageAliases = new Map([
+  ['bash', 'bash'],
+  ['sh', 'bash'],
+  ['shell', 'bash'],
+  ['css', 'css'],
+  ['html', 'html'],
+  ['java', 'java'],
+  ['js', 'javascript'],
+  ['javascript', 'javascript'],
+  ['json', 'json'],
+  ['jsonc', 'jsonc'],
+  ['jsx', 'jsx'],
+  ['md', 'markdown'],
+  ['markdown', 'markdown'],
+  ['toml', 'toml'],
+  ['ts', 'typescript'],
+  ['typescript', 'typescript'],
+  ['tsx', 'tsx'],
+  ['yaml', 'yaml'],
+  ['yml', 'yaml'],
+]);
 
 function quote(value) {
   return JSON.stringify(String(value));
@@ -114,6 +137,15 @@ function languageForSourcePath(sourcePath) {
   return 'plaintext';
 }
 
+function languageForFence(info) {
+  const name = String(info ?? '').trim().split(/\s+/)[0].toLowerCase();
+  return fenceLanguageAliases.get(name) ?? 'plaintext';
+}
+
+function shouldRenderFence(info) {
+  return languageForFence(info) !== 'plaintext';
+}
+
 function tokenStyle(token) {
   if (/^\s+$/.test(token.content)) return '';
   const dark = token.variants?.dark;
@@ -134,6 +166,126 @@ function tokenHtml(token) {
   return style ? `<span${style}>${content}</span>` : content;
 }
 
+function jsonLineComment(trimmed) {
+  if (/^"scripts"\s*:/.test(trimmed)) return '项目脚本入口。';
+  if (/^"dependencies"\s*:/.test(trimmed)) return '运行时依赖。';
+  if (/^"devDependencies"\s*:/.test(trimmed)) return '开发期依赖。';
+  if (/^"exports"\s*:/.test(trimmed)) return '包对外暴露入口。';
+  if (/^"workspaces"\s*:/.test(trimmed)) return '声明工作区范围。';
+  if (/^"type"\s*:/.test(trimmed)) return '控制模块格式。';
+  if (/^"(build|dev|test|typecheck|lint|start)"\s*:/.test(trimmed)) return '常用工程命令。';
+  return '';
+}
+
+function tomlLineComment(trimmed) {
+  if (/^\[/.test(trimmed)) return '配置分组。';
+  if (/^(test|install|run|registry|telemetry)\b/.test(trimmed)) return '配置具体行为。';
+  return '';
+}
+
+function markdownLineComment(trimmed) {
+  if (/^#{1,6}\s+/.test(trimmed)) return '文档标题层级。';
+  if (/^[-*]\s+/.test(trimmed)) return '列表里的一个要点。';
+  if (/^\|/.test(trimmed)) return '表格行。';
+  return '';
+}
+
+function codeLineComment(line, context) {
+  const trimmed = line.trim();
+  if (!trimmed) return '';
+  if (/^(\/\/|\/\*|\*\/|\*)/.test(trimmed)) return '';
+  if (/^[}\])]+[,;]?$/.test(trimmed)) return '';
+
+  if (context.language === 'json' || context.language === 'jsonc') return jsonLineComment(trimmed);
+  if (context.language === 'toml') return tomlLineComment(trimmed);
+  if (context.language === 'markdown') return markdownLineComment(trimmed);
+
+  const sourcePath = context.sourcePath ?? '';
+  if (sourcePath.includes('/cli/cmd/run.ts') && /args\.interactive/.test(trimmed)) return '区分交互与非交互。';
+  if (sourcePath.includes('/cli/cmd/run.ts') && /runInteractiveMode|execute\(/.test(trimmed)) return '进入 CLI 主执行路径。';
+  if (sourcePath.includes('/tool/shell.ts') && /ctx\.ask|Permission/.test(trimmed)) return '执行前先走权限。';
+  if (sourcePath.includes('/tool/edit.ts') && /patch|apply|write/i.test(trimmed)) return '准备修改文件内容。';
+  if (sourcePath.includes('/session/prompt.ts') && /while\s*\(true\)|runLoop/.test(trimmed)) return 'agent 核心循环。';
+  if (sourcePath.includes('/session/processor.ts') && /parts|message|patch/.test(trimmed)) return '把流事件写回消息。';
+
+  const rules = [
+    [/^import\s+/, '引入需要的模块。'],
+    [/await\s+import\(/, '按需加载模块。'],
+    [/yargs\(/, '创建 CLI 参数解析器。'],
+    [/\.command\(/, '注册 CLI 子命令。'],
+    [/\.option\(/, '声明一个 CLI 选项。'],
+    [/\.middleware\(/, '执行前先处理中间件。'],
+    [/\.parse\(/, '开始解析命令参数。'],
+    [/createOpencodeClient|createClient\(/, '创建 SDK 客户端。'],
+    [/Server\.Default|\.app\.fetch/, '复用后端请求入口。'],
+    [/session\.prompt|SessionPrompt\.prompt/, '把输入交给会话主流程。'],
+    [/session\.command/, '执行内置 session 命令。'],
+    [/session\.abort|AbortController|AbortSignal/, '用于中断运行任务。'],
+    [/event\.subscribe|subscribe\(/, '订阅运行时事件。'],
+    [/Bus\.(publish|subscribe)|\.publish\(/, '广播状态变化。'],
+    [/Permission\.ask|ctx\.ask|permission\.ask/, '进入权限审批。'],
+    [/Permission\.reply|permission\.reply/, '回写审批结果。'],
+    [/Tool\.(define|init)|tool\(.*\)/, '声明可调用工具。'],
+    [/execute\s*:\s*async|async\s+execute|execute\(/, '工具真正执行入口。'],
+    [/schema\s*:|Schema\.|z\./, '定义并校验数据形状。'],
+    [/LLM\.stream|streamText|generateText/, '向模型发起请求。'],
+    [/SessionProcessor|processor\.process/, '处理模型流事件。'],
+    [/MessageV2|ToolPart|TextPart|Part\./, '会话消息片段结构。'],
+    [/ConfigProvider|config\./, '读取运行配置。'],
+    [/Provider|provider|modelID|model\s*:/, '选择模型或 provider。'],
+    [/Plugin|hook|trigger/, '调用插件扩展点。'],
+    [/fs\.|readFile|writeFile|FileSystem|Glob/, '读写本地文件。'],
+    [/shell|command|Bash|cmd\s*:/, '处理命令执行。'],
+    [/LSP|diagnostic|Diagnostics/, '处理语言服务诊断。'],
+    [/Effect\.gen|Effect\./, 'Effect 异步工作流。'],
+    [/yield\*/, '等待 Effect 结果。'],
+    [/Promise\.all/, '并行等待多个任务。'],
+    [/for\s+await/, '消费异步流。'],
+    [/while\s*\(true\)/, '持续循环到退出条件。'],
+    [/^try\s*{?$/, '开始保护性执行。'],
+    [/^catch\b/, '集中处理异常。'],
+    [/^throw\b/, '失败时抛出错误。'],
+    [/^return\b/, '返回给上一层。'],
+    [/^if\b/, '按条件进入分支。'],
+    [/^for\b/, '遍历集合。'],
+    [/^async\s+function|^function\b/, '定义一段可复用逻辑。'],
+    [/^(export\s+)?(type|interface)\s+/, '定义数据结构约束。'],
+    [/^(export\s+)?class\s+/, '定义一个类。'],
+    [/^export\s+/, '对外暴露模块成员。'],
+  ];
+
+  for (const [pattern, comment] of rules) {
+    if (pattern.test(trimmed)) return comment;
+  }
+
+  if (context.language === 'java') {
+    if (/^public\b|^private\b|^protected\b/.test(trimmed)) return 'Java 方法或字段定义。';
+    if (/^new\b/.test(trimmed)) return '创建对象实例。';
+  }
+
+  return '';
+}
+
+async function highlightedCodeHtml(lines, { language, sourcePath, startLine = 1 }) {
+  const highlighter = await sourceHighlighter;
+  const tokenLines = highlighter.codeToTokensWithThemes(lines.join('\n'), {
+    lang: language,
+    themes: sourceThemes,
+  });
+  const comments = lines.map((line) => codeLineComment(line, { language, sourcePath }));
+  const hasComments = comments.some(Boolean);
+  const html = lines
+    .map((line, index) => {
+      const number = startLine + index;
+      const highlighted = tokenLines[index]?.length ? tokenLines[index].map(tokenHtml).join('') : escapeHtml(line);
+      const codeLine = `<span class="source-line"><span class="source-line-number">${number}</span><span class="source-line-text">${highlighted}</span></span>`;
+      if (!comments[index]) return codeLine;
+      return `${codeLine}<span class="source-line source-line--comment"><span class="source-line-number"></span><span class="source-line-comment">${escapeHtml(comments[index])}</span></span>`;
+    })
+    .join('');
+  return { html, hasComments };
+}
+
 async function sourceCodeHtml(sourcePath, sourceLines) {
   const { start, end } = parseLineRange(sourceLines);
   const lines = await readSourceLines(sourcePath);
@@ -142,19 +294,11 @@ async function sourceCodeHtml(sourcePath, sourceLines) {
   }
 
   const snippet = lines.slice(start - 1, end);
-  const highlighter = await sourceHighlighter;
-  const tokenLines = highlighter.codeToTokensWithThemes(snippet.join('\n'), {
-    lang: languageForSourcePath(sourcePath),
-    themes: sourceThemes,
+  return highlightedCodeHtml(snippet, {
+    language: languageForSourcePath(sourcePath),
+    sourcePath,
+    startLine: start,
   });
-
-  return snippet
-    .map((line, index) => {
-      const number = start + index;
-      const highlighted = tokenLines[index]?.length ? tokenLines[index].map(tokenHtml).join('') : escapeHtml(line);
-      return `<span class="source-line"><span class="source-line-number">${number}</span><span class="source-line-text">${highlighted}</span></span>`;
-    })
-    .join('');
 }
 
 async function renderSourceRef(attrs, variant = 'card') {
@@ -166,13 +310,14 @@ async function renderSourceRef(attrs, variant = 'card') {
   const note = attrs.note ? `<p class="source-ref-note">${escapeHtml(attrs.note)}</p>\n` : '';
   const code = await sourceCodeHtml(attrs.path, attrs.lines);
   const classes = variant === 'inline' ? 'source-ref source-ref--inline' : 'source-ref';
+  const codeClasses = code.hasComments ? 'source-code source-code--annotated' : 'source-code';
 
   return `<details class="${classes}">
   <summary>
     <span class="source-ref-title">${escapeHtml(title)}</span>
     <span class="source-ref-path"><code>${escapeHtml(label)}</code></span>
   </summary>
-  ${note}<pre class="source-code" tabindex="0"><code>${code}</code></pre>
+  ${note}<pre class="${codeClasses}" tabindex="0"><code>${code.html}</code></pre>
 </details>`;
 }
 
@@ -253,9 +398,61 @@ async function expandInlineSourceRefs(markdown) {
   return expanded.join('\n');
 }
 
+function inferFenceSourcePath(lines, startIndex) {
+  const nearby = lines.slice(startIndex, startIndex + 4).join('\n');
+  for (const match of nearby.matchAll(/`([^`\n]+?)`/g)) {
+    const ref = parseSourceLabel(match[1]);
+    if (ref) return ref.path;
+  }
+  return '';
+}
+
+async function renderFencedCodeBlocks(markdown) {
+  const lines = markdown.split('\n');
+  const rendered = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const open = lines[index].match(/^(```|~~~)(.*)$/);
+    if (!open) {
+      rendered.push(lines[index]);
+      continue;
+    }
+
+    const fence = open[1];
+    const info = open[2].trim();
+    let closeIndex = index + 1;
+    while (closeIndex < lines.length && !lines[closeIndex].startsWith(fence)) {
+      closeIndex += 1;
+    }
+
+    if (closeIndex >= lines.length || !shouldRenderFence(info)) {
+      rendered.push(...lines.slice(index, Math.min(closeIndex + 1, lines.length)));
+      index = closeIndex;
+      continue;
+    }
+
+    const codeLines = lines.slice(index + 1, closeIndex);
+    const sourcePath = inferFenceSourcePath(lines, closeIndex + 1);
+    const code = await highlightedCodeHtml(codeLines, {
+      language: languageForFence(info),
+      sourcePath,
+      startLine: 1,
+    });
+    const codeClasses = code.hasComments
+      ? 'source-code source-code--standalone source-code--annotated'
+      : 'source-code source-code--standalone';
+
+    rendered.push(`<pre class="${codeClasses}" tabindex="0"><code>${code.html}</code></pre>`);
+    index = closeIndex;
+  }
+
+  return rendered.join('\n');
+}
+
 async function expandSourceEvidence(markdown) {
   const withCards = await expandSourceRefs(markdown);
-  return expandInlineSourceRefs(withCards);
+  const withInlineRefs = await expandInlineSourceRefs(withCards);
+  return renderFencedCodeBlocks(withInlineRefs);
 }
 
 function oldHtmlRedirects() {
