@@ -182,10 +182,15 @@ body {
   border-radius: 0;
   max-height: 34rem;
   overflow: auto;
-  background: #101820;
-  color: #edf7f2;
+  background: #011627;
+  color: #d6deeb;
   font-size: 0.86rem;
   line-height: 1.42;
+}
+
+:root[data-theme='light'] .source-code {
+  background: #fff;
+  color: #24292e;
 }
 
 .source-code code {
@@ -205,17 +210,33 @@ body {
 .source-line-number {
   padding: 0 0.75rem 0 0.9rem;
   border-right: 1px solid rgba(255, 255, 255, 0.14);
-  color: #7fa59a;
+  color: #7fdbca;
   font-variant-numeric: tabular-nums;
   line-height: inherit;
   text-align: right;
   user-select: none;
 }
 
+:root[data-theme='light'] .source-line-number {
+  border-right-color: rgba(36, 41, 46, 0.14);
+  color: #6a737d;
+}
+
 .source-line-text {
   padding: 0 1rem;
   line-height: inherit;
   white-space: pre;
+}
+
+.source-token {
+  color: var(--source-token-dark, currentColor);
+  font-style: var(--source-token-font-style, normal);
+  font-weight: var(--source-token-font-weight, inherit);
+  text-decoration: var(--source-token-decoration, none);
+}
+
+:root[data-theme='light'] .source-token {
+  color: var(--source-token-light, var(--source-token-dark, currentColor));
 }
 
 .agent-flow {

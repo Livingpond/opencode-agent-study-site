@@ -1,5 +1,6 @@
 import { mkdir, readFile, rm, writeFile, cp } from 'node:fs/promises';
 import path from 'node:path';
+import { createHighlighter } from 'shiki';
 
 const root = process.cwd();
 const docsDir = path.join(root, 'src/content/docs');
@@ -12,6 +13,26 @@ const sourceRoot = process.env.OPENCODE_SOURCE_ROOT
 const chapters = JSON.parse(await readFile(path.join(root, 'data/chapters.json'), 'utf8'));
 const progress = JSON.parse(await readFile(path.join(root, 'data/progress.json'), 'utf8'));
 const sourceFileCache = new Map();
+const sourceThemes = { dark: 'night-owl', light: 'github-light' };
+const sourceHighlighter = createHighlighter({
+  themes: Object.values(sourceThemes),
+  langs: [
+    'bash',
+    'css',
+    'html',
+    'javascript',
+    'json',
+    'jsonc',
+    'jsx',
+    'markdown',
+    'plaintext',
+    'shellscript',
+    'toml',
+    'tsx',
+    'typescript',
+    'yaml',
+  ],
+});
 
 function quote(value) {
   return JSON.stringify(String(value));
@@ -75,6 +96,44 @@ async function readSourceLines(sourcePath) {
   return sourceFileCache.get(sourcePath);
 }
 
+function languageForSourcePath(sourcePath) {
+  const basename = path.basename(sourcePath);
+  const ext = path.extname(sourcePath).toLowerCase();
+  if (basename === 'package.json') return 'json';
+  if (ext === '.ts') return 'typescript';
+  if (ext === '.tsx') return 'tsx';
+  if (ext === '.js' || ext === '.mjs' || ext === '.cjs') return 'javascript';
+  if (ext === '.jsx') return 'jsx';
+  if (ext === '.json' || ext === '.jsonc') return 'jsonc';
+  if (ext === '.md' || ext === '.mdx') return 'markdown';
+  if (ext === '.css') return 'css';
+  if (ext === '.html') return 'html';
+  if (ext === '.yml' || ext === '.yaml') return 'yaml';
+  if (ext === '.toml') return 'toml';
+  if (ext === '.sh' || ext === '.bash' || ext === '.zsh') return 'bash';
+  return 'plaintext';
+}
+
+function tokenStyle(token) {
+  if (/^\s+$/.test(token.content)) return '';
+  const dark = token.variants?.dark;
+  const light = token.variants?.light;
+  const styles = [];
+  if (dark?.color) styles.push(`--source-token-dark:${dark.color}`);
+  if (light?.color) styles.push(`--source-token-light:${light.color}`);
+  const fontStyle = dark?.fontStyle ?? light?.fontStyle ?? 0;
+  if (fontStyle & 1) styles.push('--source-token-font-style:italic');
+  if (fontStyle & 2) styles.push('--source-token-font-weight:700');
+  if (fontStyle & 4) styles.push('--source-token-decoration:underline');
+  return styles.length ? ` class="source-token" style="${styles.join(';')}"` : '';
+}
+
+function tokenHtml(token) {
+  const content = escapeHtml(token.content);
+  const style = tokenStyle(token);
+  return style ? `<span${style}>${content}</span>` : content;
+}
+
 async function sourceCodeHtml(sourcePath, sourceLines) {
   const { start, end } = parseLineRange(sourceLines);
   const lines = await readSourceLines(sourcePath);
@@ -82,11 +141,18 @@ async function sourceCodeHtml(sourcePath, sourceLines) {
     throw new Error(`source-ref ${sourcePath}:${sourceLines} exceeds file length ${lines.length}`);
   }
 
-  return lines
-    .slice(start - 1, end)
+  const snippet = lines.slice(start - 1, end);
+  const highlighter = await sourceHighlighter;
+  const tokenLines = highlighter.codeToTokensWithThemes(snippet.join('\n'), {
+    lang: languageForSourcePath(sourcePath),
+    themes: sourceThemes,
+  });
+
+  return snippet
     .map((line, index) => {
       const number = start + index;
-      return `<span class="source-line"><span class="source-line-number">${number}</span><span class="source-line-text">${escapeHtml(line)}</span></span>`;
+      const highlighted = tokenLines[index]?.length ? tokenLines[index].map(tokenHtml).join('') : escapeHtml(line);
+      return `<span class="source-line"><span class="source-line-number">${number}</span><span class="source-line-text">${highlighted}</span></span>`;
     })
     .join('');
 }
