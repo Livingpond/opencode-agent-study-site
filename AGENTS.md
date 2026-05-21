@@ -54,6 +54,9 @@ Recommended chapter structure:
 - If a source path is inferred from architecture rather than directly inspected, say so in the chapter body.
 - Do not invent behavior to make a teaching narrative smoother.
 - For Java analogies, clearly separate the analogy from the TypeScript/Effect behavior.
+- When a line reference is important for the learner, add a render-time source card with an HTML comment directive:
+  `<!-- source-ref path="packages/opencode/src/index.ts" lines="58-110" title="What this code does" note="Optional short reading hint." -->`.
+  The sync script expands it into a collapsible code block using the local OpenCode checkout.
 
 ## Style Rules
 

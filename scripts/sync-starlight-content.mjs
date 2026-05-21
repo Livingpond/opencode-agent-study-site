@@ -5,6 +5,9 @@ const root = process.cwd();
 const docsDir = path.join(root, 'src/content/docs');
 const chapterDocsDir = path.join(docsDir, 'chapters');
 const publicDir = path.join(root, 'public');
+const sourceRoot = process.env.OPENCODE_SOURCE_ROOT
+  ? path.resolve(process.env.OPENCODE_SOURCE_ROOT)
+  : path.resolve(root, '../../../opencode');
 
 const chapters = JSON.parse(await readFile(path.join(root, 'data/chapters.json'), 'utf8'));
 const progress = JSON.parse(await readFile(path.join(root, 'data/progress.json'), 'utf8'));
@@ -32,6 +35,64 @@ function escapeHtml(value) {
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
+}
+
+function parseAttributes(value) {
+  return Object.fromEntries([...value.matchAll(/([a-zA-Z][\w-]*)="([^"]*)"/g)].map((match) => [match[1], match[2]]));
+}
+
+function parseLineRange(value) {
+  const match = String(value ?? '').match(/^(\d+)(?:-(\d+))?$/);
+  if (!match) throw new Error(`Invalid source-ref lines value: ${value}`);
+  const start = Number(match[1]);
+  const end = Number(match[2] ?? match[1]);
+  if (start < 1 || end < start) throw new Error(`Invalid source-ref line range: ${value}`);
+  return { start, end };
+}
+
+async function renderSourceRef(attrs) {
+  if (!attrs.path) throw new Error('source-ref is missing path="..."');
+  if (!attrs.lines) throw new Error(`source-ref for ${attrs.path} is missing lines="..."`);
+
+  const { start, end } = parseLineRange(attrs.lines);
+  const filePath = path.join(sourceRoot, attrs.path);
+  const content = await readFile(filePath, 'utf8');
+  const lines = content.split(/\r?\n/);
+  if (end > lines.length) {
+    throw new Error(`source-ref ${attrs.path}:${attrs.lines} exceeds file length ${lines.length}`);
+  }
+
+  const title = attrs.title || attrs.path;
+  const label = `${attrs.path}:${attrs.lines}`;
+  const note = attrs.note ? `<p class="source-ref-note">${escapeHtml(attrs.note)}</p>\n` : '';
+  const code = lines
+    .slice(start - 1, end)
+    .map((line, index) => {
+      const number = start + index;
+      return `<span class="source-line"><span class="source-line-number">${number}</span><span class="source-line-text">${escapeHtml(line)}</span></span>`;
+    })
+    .join('\n');
+
+  return `<details class="source-ref">
+  <summary>
+    <span class="source-ref-title">${escapeHtml(title)}</span>
+    <span class="source-ref-path"><code>${escapeHtml(label)}</code></span>
+  </summary>
+  ${note}<pre class="source-code" tabindex="0"><code>${code}</code></pre>
+</details>`;
+}
+
+async function expandSourceRefs(markdown) {
+  const pattern = /<!--\s*source-ref\s+([\s\S]*?)\s*-->/g;
+  let result = '';
+  let lastIndex = 0;
+  for (const match of markdown.matchAll(pattern)) {
+    result += markdown.slice(lastIndex, match.index);
+    result += await renderSourceRef(parseAttributes(match[1]));
+    lastIndex = match.index + match[0].length;
+  }
+  result += markdown.slice(lastIndex);
+  return result;
 }
 
 function oldHtmlRedirects() {
@@ -164,7 +225,8 @@ async function writeChapterPages() {
     if (chapter.status === 'complete') {
       const markdownPath = path.join(root, chapter.markdown);
       const markdown = await readFile(markdownPath, 'utf8');
-      body = `${chapterMeta(chapter)}\n\n${stripFirstHeading(markdown)}\n`;
+      const expandedMarkdown = await expandSourceRefs(stripFirstHeading(markdown));
+      body = `${chapterMeta(chapter)}\n\n${expandedMarkdown}\n`;
     } else {
       body = `${pendingBody(chapter)}\n`;
     }
