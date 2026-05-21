@@ -54,9 +54,10 @@ Recommended chapter structure:
 - If a source path is inferred from architecture rather than directly inspected, say so in the chapter body.
 - Do not invent behavior to make a teaching narrative smoother.
 - For Java analogies, clearly separate the analogy from the TypeScript/Effect behavior.
+- Inline source references written as backticked `path:line` or `path:start-end` values are expanded automatically at render time when the path resolves inside the local OpenCode checkout.
 - When a line reference is important for the learner, add a render-time source card with an HTML comment directive:
   `<!-- source-ref path="packages/opencode/src/index.ts" lines="58-110" title="What this code does" note="Optional short reading hint." -->`.
-  The sync script expands it into a collapsible code block using the local OpenCode checkout.
+  Use this only when you want a dedicated full-width source card; ordinary inline source references do not need this comment.
 
 ## Style Rules
 

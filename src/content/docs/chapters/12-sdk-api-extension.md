@@ -55,7 +55,206 @@ sidebar:
 
 ## 1. 一句话讲明白
 
-SDK / API / 扩展层是 OpenCode 的“外部接口层”：server 用 Effect HTTP API 把 session、file、provider、permission、event 等能力组合成 typed API；JS SDK 包装 generated client 给 CLI/UI/插件使用；插件系统把 SDK、项目上下文和 hook trigger 暴露给外部模块，让外部代码能参与 provider、tool、shell.env、chat.params、event 等扩展点。来源：`packages/opencode/src/server/routes/instance/httpapi/api.ts:30-62`、`packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240`、`packages/sdk/js/src/client.ts:33-57`、`packages/opencode/src/plugin/index.ts:43-55`、`packages/opencode/src/plugin/index.ts:126-150`、`packages/opencode/src/plugin/index.ts:261-274`。
+SDK / API / 扩展层是 OpenCode 的“外部接口层”：server 用 Effect HTTP API 把 session、file、provider、permission、event 等能力组合成 typed API；JS SDK 包装 generated client 给 CLI/UI/插件使用；插件系统把 SDK、项目上下文和 hook trigger 暴露给外部模块，让外部代码能参与 provider、tool、shell.env、chat.params、event 等扩展点。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/api.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/api.ts:30-62</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">export const RootHttpApi = HttpApi.make(&quot;opencode-root&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">  .addHttpApi(ControlApi)</span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">  .addHttpApi(GlobalApi)</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">  .middleware(SchemaErrorMiddleware)</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text">  .middleware(Authorization)</span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">export const InstanceHttpApi = HttpApi.make(&quot;opencode-instance&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">  .addHttpApi(ConfigApi)</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">  .addHttpApi(ExperimentalApi)</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">  .addHttpApi(FileApi)</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  .addHttpApi(InstanceApi)</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">  .addHttpApi(McpApi)</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">  .addHttpApi(ProjectApi)</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">  .addHttpApi(PtyApi)</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  .addHttpApi(QuestionApi)</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">  .addHttpApi(PermissionApi)</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  .addHttpApi(ProviderApi)</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">  .addHttpApi(SessionApi)</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  .addHttpApi(SyncApi)</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  .addHttpApi(V2Api)</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">  .addHttpApi(TuiApi)</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  .addHttpApi(WorkspaceApi)</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">  .middleware(SchemaErrorMiddleware)</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">export const OpenCodeHttpApi = HttpApi.make(&quot;opencode&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  .addHttpApi(RootHttpApi)</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">  .addHttpApi(EventApi)</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">  .addHttpApi(InstanceHttpApi)</span></span>
+<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">  .addHttpApi(PtyConnectApi)</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  .annotate(HttpApi.AdditionalSchemas, [EventSchema, ...SyncEventSchemas])</span></span>
+<span class="source-line"><span class="source-line-number">60</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">export type RootHttpApiType = typeof RootHttpApi</span></span>
+<span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">export type InstanceHttpApiType = typeof InstanceHttpApi</span></span></code></pre>
+</details>、<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/server.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">export function createRoutes(</span></span>
+<span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">  corsOptions?: CorsOptions,</span></span>
+<span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">): Layer.Layer&lt;never, EffectConfig.ConfigError, RouteRequirements&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">  return Layer.mergeAll(rootApiRoutes, eventApiRoutes, instanceRoutes, docRoute, uiRoute).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">    Layer.provide([</span></span>
+<span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">      errorLayer,</span></span>
+<span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      compressionLayer,</span></span>
+<span class="source-line"><span class="source-line-number">189</span><span class="source-line-text">      corsVaryFix,</span></span>
+<span class="source-line"><span class="source-line-number">190</span><span class="source-line-text">      fenceLayer,</span></span>
+<span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">      cors(corsOptions),</span></span>
+<span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">      Account.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">      Agent.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">      Auth.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">      Command.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">      Config.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">      File.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">      FileWatcher.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">      Format.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">      LSP.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">      Installation.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">      MCP.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">203</span><span class="source-line-text">      ModelsDev.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      Permission.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">205</span><span class="source-line-text">      Plugin.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      Project.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">      ProviderAuth.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">      Provider.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">      Pty.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">      PtyTicket.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">      Question.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">      Ripgrep.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">      RuntimeFlags.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">      Session.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">      SessionCompaction.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">      SessionPrompt.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">      SessionRevert.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">      SessionShare.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">      SessionRunState.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">      SessionStatus.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">      SessionSummary.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">      ShareNext.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">      Snapshot.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">      SyncEvent.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">      EventV2Bridge.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">226</span><span class="source-line-text">      Skill.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">227</span><span class="source-line-text">      Todo.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">228</span><span class="source-line-text">      ToolRegistry.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">229</span><span class="source-line-text">      Vcs.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">230</span><span class="source-line-text">      Workspace.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">231</span><span class="source-line-text">      Worktree.appLayer,</span></span>
+<span class="source-line"><span class="source-line-number">232</span><span class="source-line-text">      Bus.layer,</span></span>
+<span class="source-line"><span class="source-line-number">233</span><span class="source-line-text">      AppFileSystem.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">234</span><span class="source-line-text">      FetchHttpClient.layer,</span></span>
+<span class="source-line"><span class="source-line-number">235</span><span class="source-line-text">      HttpServer.layerServices,</span></span>
+<span class="source-line"><span class="source-line-number">236</span><span class="source-line-text">    ]),</span></span>
+<span class="source-line"><span class="source-line-number">237</span><span class="source-line-text">    Layer.provide(Layer.succeed(CorsConfig)(corsOptions)),</span></span>
+<span class="source-line"><span class="source-line-number">238</span><span class="source-line-text">    Layer.provide(InstanceLayer.layer),</span></span>
+<span class="source-line"><span class="source-line-number">239</span><span class="source-line-text">    Layer.provide(Observability.layer),</span></span>
+<span class="source-line"><span class="source-line-number">240</span><span class="source-line-text">  )</span></span></code></pre>
+</details>、<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/client.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/client.ts:33-57</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">export function createOpencodeClient(config?: Config &amp; { directory?: string }) {</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text">  if (!config?.fetch) {</span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">    const customFetch: any = (req: any) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">      // @ts-ignore</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      req.timeout = false</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">      return fetch(req)</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">    config = {</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">      ...config,</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">      fetch: customFetch,</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  if (config?.directory) {</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">    config.headers = {</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">      ...config.headers,</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">      &quot;x-opencode-directory&quot;: encodeURIComponent(config.directory),</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  const client = createClient(config)</span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">  client.interceptors.request.use((request) =&gt; rewrite(request, config?.directory))</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  client.interceptors.error.use(wrapClientError)</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">  return new OpencodeClient({ client })</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">}</span></span></code></pre>
+</details>、<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:43-55</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">export interface Interface {</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  readonly trigger: &lt;</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">    Name extends TriggerName,</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">    Input = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[0],</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">    Output = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[1],</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  &gt;(</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">    name: Name,</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">    input: Input,</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">    output: Output,</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">  ) =&gt; Effect.Effect&lt;Output&gt;</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  readonly list: () =&gt; Effect.Effect&lt;Hooks[]&gt;</span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">  readonly init: () =&gt; Effect.Effect&lt;void&gt;</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">}</span></span></code></pre>
+</details>、<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:126-150</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">        const { Server } = yield* Effect.promise(() =&gt; import(&quot;../server/server&quot;))</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">        const client = createOpencodeClient({</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">          baseUrl: &quot;http://localhost:4096&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">          headers: ServerAuth.headers(),</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">          fetch: async (...args) =&gt; Server.Default().app.fetch(...args),</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">        })</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">        const cfg = yield* config.get()</span></span>
+<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">        const input: PluginInput = {</span></span>
+<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">          client,</span></span>
+<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">          project: ctx.project,</span></span>
+<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text">          worktree: ctx.worktree,</span></span>
+<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">          experimental_workspace: {</span></span>
+<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">            register(type: string, adapter: PluginWorkspaceAdapter) {</span></span>
+<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">              registerAdapter(ctx.project.id, type, adapter as WorkspaceAdapter)</span></span>
+<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">            },</span></span>
+<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">          get serverUrl(): URL {</span></span>
+<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">            return Server.url ?? new URL(&quot;http://localhost:4096&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">          // @ts-expect-error</span></span>
+<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">          $: typeof Bun === &quot;undefined&quot; ? undefined : Bun.$,</span></span>
+<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">        }</span></span></code></pre>
+</details>、<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:261-274</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">261</span><span class="source-line-text">    const trigger = Effect.fn(&quot;Plugin.trigger&quot;)(function* &lt;</span></span>
+<span class="source-line"><span class="source-line-number">262</span><span class="source-line-text">      Name extends TriggerName,</span></span>
+<span class="source-line"><span class="source-line-number">263</span><span class="source-line-text">      Input = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[0],</span></span>
+<span class="source-line"><span class="source-line-number">264</span><span class="source-line-text">      Output = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[1],</span></span>
+<span class="source-line"><span class="source-line-number">265</span><span class="source-line-text">    &gt;(name: Name, input: Input, output: Output) {</span></span>
+<span class="source-line"><span class="source-line-number">266</span><span class="source-line-text">      if (!name) return output</span></span>
+<span class="source-line"><span class="source-line-number">267</span><span class="source-line-text">      const s = yield* InstanceState.get(state)</span></span>
+<span class="source-line"><span class="source-line-number">268</span><span class="source-line-text">      for (const hook of s.hooks) {</span></span>
+<span class="source-line"><span class="source-line-number">269</span><span class="source-line-text">        const fn = hook[name] as any</span></span>
+<span class="source-line"><span class="source-line-number">270</span><span class="source-line-text">        if (!fn) continue</span></span>
+<span class="source-line"><span class="source-line-number">271</span><span class="source-line-text">        yield* Effect.promise(async () =&gt; fn(input, output))</span></span>
+<span class="source-line"><span class="source-line-number">272</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">273</span><span class="source-line-text">      return output</span></span>
+<span class="source-line"><span class="source-line-number">274</span><span class="source-line-text">    })</span></span></code></pre>
+</details>。
 
 ## 2. 它在 OpenCode agent 中的位置
 
@@ -83,10 +282,165 @@ Plugin modules
 
 关键判断：
 
-- `OpenCodeHttpApi` 是 Root、Event、Instance、PtyConnect 的组合。来源：`packages/opencode/src/server/routes/instance/httpapi/api.ts:54-59`。
-- `createRoutes` 把 handlers 和大量 runtime service layer 组合起来。来源：`packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240`。
-- SDK `createOpencodeClient` 在 client interceptor 中改写 directory query。来源：`packages/sdk/js/src/client.ts:17-31`、`packages/sdk/js/src/client.ts:33-57`。
-- Plugin input 里直接给插件一个 SDK client 和 project/worktree/directory/serverUrl。来源：`packages/opencode/src/plugin/index.ts:126-150`。
+- `OpenCodeHttpApi` 是 Root、Event、Instance、PtyConnect 的组合。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/api.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/api.ts:54-59</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">export const OpenCodeHttpApi = HttpApi.make(&quot;opencode&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  .addHttpApi(RootHttpApi)</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">  .addHttpApi(EventApi)</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">  .addHttpApi(InstanceHttpApi)</span></span>
+<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">  .addHttpApi(PtyConnectApi)</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  .annotate(HttpApi.AdditionalSchemas, [EventSchema, ...SyncEventSchemas])</span></span></code></pre>
+</details>。
+- `createRoutes` 把 handlers 和大量 runtime service layer 组合起来。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/server.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">export function createRoutes(</span></span>
+<span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">  corsOptions?: CorsOptions,</span></span>
+<span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">): Layer.Layer&lt;never, EffectConfig.ConfigError, RouteRequirements&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">  return Layer.mergeAll(rootApiRoutes, eventApiRoutes, instanceRoutes, docRoute, uiRoute).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">    Layer.provide([</span></span>
+<span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">      errorLayer,</span></span>
+<span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      compressionLayer,</span></span>
+<span class="source-line"><span class="source-line-number">189</span><span class="source-line-text">      corsVaryFix,</span></span>
+<span class="source-line"><span class="source-line-number">190</span><span class="source-line-text">      fenceLayer,</span></span>
+<span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">      cors(corsOptions),</span></span>
+<span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">      Account.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">      Agent.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">      Auth.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">      Command.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">      Config.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">      File.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">      FileWatcher.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">      Format.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">      LSP.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">      Installation.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">      MCP.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">203</span><span class="source-line-text">      ModelsDev.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      Permission.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">205</span><span class="source-line-text">      Plugin.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      Project.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">      ProviderAuth.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">      Provider.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">      Pty.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">      PtyTicket.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">      Question.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">      Ripgrep.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">      RuntimeFlags.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">      Session.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">      SessionCompaction.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">      SessionPrompt.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">      SessionRevert.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">      SessionShare.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">      SessionRunState.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">      SessionStatus.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">      SessionSummary.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">      ShareNext.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">      Snapshot.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">      SyncEvent.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">      EventV2Bridge.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">226</span><span class="source-line-text">      Skill.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">227</span><span class="source-line-text">      Todo.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">228</span><span class="source-line-text">      ToolRegistry.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">229</span><span class="source-line-text">      Vcs.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">230</span><span class="source-line-text">      Workspace.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">231</span><span class="source-line-text">      Worktree.appLayer,</span></span>
+<span class="source-line"><span class="source-line-number">232</span><span class="source-line-text">      Bus.layer,</span></span>
+<span class="source-line"><span class="source-line-number">233</span><span class="source-line-text">      AppFileSystem.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">234</span><span class="source-line-text">      FetchHttpClient.layer,</span></span>
+<span class="source-line"><span class="source-line-number">235</span><span class="source-line-text">      HttpServer.layerServices,</span></span>
+<span class="source-line"><span class="source-line-number">236</span><span class="source-line-text">    ]),</span></span>
+<span class="source-line"><span class="source-line-number">237</span><span class="source-line-text">    Layer.provide(Layer.succeed(CorsConfig)(corsOptions)),</span></span>
+<span class="source-line"><span class="source-line-number">238</span><span class="source-line-text">    Layer.provide(InstanceLayer.layer),</span></span>
+<span class="source-line"><span class="source-line-number">239</span><span class="source-line-text">    Layer.provide(Observability.layer),</span></span>
+<span class="source-line"><span class="source-line-number">240</span><span class="source-line-text">  )</span></span></code></pre>
+</details>。
+- SDK `createOpencodeClient` 在 client interceptor 中改写 directory query。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/client.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/client.ts:17-31</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">17</span><span class="source-line-text">function rewrite(request: Request, directory?: string) {</span></span>
+<span class="source-line"><span class="source-line-number">18</span><span class="source-line-text">  if (request.method !== &quot;GET&quot; &amp;&amp; request.method !== &quot;HEAD&quot;) return request</span></span>
+<span class="source-line"><span class="source-line-number">19</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">20</span><span class="source-line-text">  const value = pick(request.headers.get(&quot;x-opencode-directory&quot;), directory)</span></span>
+<span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">  if (!value) return request</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">  const url = new URL(request.url)</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">  if (!url.searchParams.has(&quot;directory&quot;)) {</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">    url.searchParams.set(&quot;directory&quot;, value)</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">  const next = new Request(url, request)</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">  next.headers.delete(&quot;x-opencode-directory&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">  return next</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">}</span></span></code></pre>
+</details>、<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/client.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/client.ts:33-57</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">export function createOpencodeClient(config?: Config &amp; { directory?: string }) {</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text">  if (!config?.fetch) {</span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">    const customFetch: any = (req: any) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">      // @ts-ignore</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      req.timeout = false</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">      return fetch(req)</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">    config = {</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">      ...config,</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">      fetch: customFetch,</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  if (config?.directory) {</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">    config.headers = {</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">      ...config.headers,</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">      &quot;x-opencode-directory&quot;: encodeURIComponent(config.directory),</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  const client = createClient(config)</span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">  client.interceptors.request.use((request) =&gt; rewrite(request, config?.directory))</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  client.interceptors.error.use(wrapClientError)</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">  return new OpencodeClient({ client })</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">}</span></span></code></pre>
+</details>。
+- Plugin input 里直接给插件一个 SDK client 和 project/worktree/directory/serverUrl。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:126-150</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">        const { Server } = yield* Effect.promise(() =&gt; import(&quot;../server/server&quot;))</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">        const client = createOpencodeClient({</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">          baseUrl: &quot;http://localhost:4096&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">          headers: ServerAuth.headers(),</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">          fetch: async (...args) =&gt; Server.Default().app.fetch(...args),</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">        })</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">        const cfg = yield* config.get()</span></span>
+<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">        const input: PluginInput = {</span></span>
+<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">          client,</span></span>
+<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">          project: ctx.project,</span></span>
+<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text">          worktree: ctx.worktree,</span></span>
+<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">          experimental_workspace: {</span></span>
+<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">            register(type: string, adapter: PluginWorkspaceAdapter) {</span></span>
+<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">              registerAdapter(ctx.project.id, type, adapter as WorkspaceAdapter)</span></span>
+<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">            },</span></span>
+<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">          get serverUrl(): URL {</span></span>
+<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">            return Server.url ?? new URL(&quot;http://localhost:4096&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">          // @ts-expect-error</span></span>
+<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">          $: typeof Bun === &quot;undefined&quot; ? undefined : Bun.$,</span></span>
+<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">        }</span></span></code></pre>
+</details>。
 
 ## 3. 生活类比
 
@@ -109,20 +463,583 @@ Plugin modules
 
 ## 5. 最小源码路径
 
-1. `packages/opencode/src/server/server.ts:58-67`：in-process `Server.Default().app.fetch`。
-2. `packages/opencode/src/server/server.ts:75-100`：listen 对外启动 HTTP server。
-3. `packages/opencode/src/server/routes/instance/httpapi/api.ts:30-62`：API group 组合。
-4. `packages/opencode/src/server/routes/instance/httpapi/server.ts:103-151`：root/event/instance routes 分层。
-5. `packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240`：createRoutes 装配 services。
-6. `packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:312-363`：session prompt/command/shell endpoint。
-7. `packages/opencode/src/server/routes/instance/httpapi/groups/event.ts:9-24`：SSE event API 定义。
-8. `packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53`：SSE event response。
-9. `packages/sdk/js/src/client.ts:33-57`：JS SDK client wrapper。
-10. `packages/sdk/js/src/server.ts:22-134`：启动 server/TUI 的 SDK helper。
-11. `packages/opencode/src/plugin/index.ts:43-55`：Plugin service interface。
-12. `packages/opencode/src/plugin/index.ts:126-150`：PluginInput。
-13. `packages/opencode/src/plugin/index.ts:261-274`：Plugin.trigger。
-14. `packages/plugin/src/index.ts:56-80`：插件包对外类型。
+1. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/server.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/server.ts:58-67</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">export const Default = lazy(() =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  const handler = HttpApiApp.webHandler().handler</span></span>
+<span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">  const app: ServerApp = {</span></span>
+<span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">    fetch: (request: Request) =&gt; handler(request, HttpApiApp.context),</span></span>
+<span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">    request(input, init) {</span></span>
+<span class="source-line"><span class="source-line-number">63</span><span class="source-line-text">      return app.fetch(input instanceof Request ? input : new Request(new URL(input, &quot;http://localhost&quot;), init))</span></span>
+<span class="source-line"><span class="source-line-number">64</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">65</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">66</span><span class="source-line-text">  return { app }</span></span>
+<span class="source-line"><span class="source-line-number">67</span><span class="source-line-text">})</span></span></code></pre>
+</details>：in-process `Server.Default().app.fetch`。
+2. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/server.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/server.ts:75-100</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">75</span><span class="source-line-text">export async function listen(opts: ListenOptions): Promise&lt;Listener&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">76</span><span class="source-line-text">  const listener = await Effect.runPromise(listenEffect(opts))</span></span>
+<span class="source-line"><span class="source-line-number">77</span><span class="source-line-text">  return {</span></span>
+<span class="source-line"><span class="source-line-number">78</span><span class="source-line-text">    hostname: listener.hostname,</span></span>
+<span class="source-line"><span class="source-line-number">79</span><span class="source-line-text">    port: listener.port,</span></span>
+<span class="source-line"><span class="source-line-number">80</span><span class="source-line-text">    url: listener.url,</span></span>
+<span class="source-line"><span class="source-line-number">81</span><span class="source-line-text">    stop: (close?: boolean) =&gt; Effect.runPromiseExit(listener.stop(close)).then(() =&gt; undefined),</span></span>
+<span class="source-line"><span class="source-line-number">82</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">83</span><span class="source-line-text">}</span></span>
+<span class="source-line"><span class="source-line-number">84</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">85</span><span class="source-line-text">const listenEffect: (opts: ListenOptions) =&gt; Effect.Effect&lt;EffectListener, unknown&gt; = Effect.fn(&quot;Server.listen&quot;)(</span></span>
+<span class="source-line"><span class="source-line-number">86</span><span class="source-line-text">  function* (opts: ListenOptions) {</span></span>
+<span class="source-line"><span class="source-line-number">87</span><span class="source-line-text">    const state = yield* startWithPortFallback(opts)</span></span>
+<span class="source-line"><span class="source-line-number">88</span><span class="source-line-text">    const address = yield* tcpAddress(state)</span></span>
+<span class="source-line"><span class="source-line-number">89</span><span class="source-line-text">    const listenerUrl = makeURL(opts.hostname, address.port)</span></span>
+<span class="source-line"><span class="source-line-number">90</span><span class="source-line-text">    url = listenerUrl</span></span>
+<span class="source-line"><span class="source-line-number">91</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">92</span><span class="source-line-text">    const unpublishMdns = yield* setupMdns(opts, address.port, state.scope)</span></span>
+<span class="source-line"><span class="source-line-number">93</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">94</span><span class="source-line-text">    return {</span></span>
+<span class="source-line"><span class="source-line-number">95</span><span class="source-line-text">      hostname: opts.hostname,</span></span>
+<span class="source-line"><span class="source-line-number">96</span><span class="source-line-text">      port: address.port,</span></span>
+<span class="source-line"><span class="source-line-number">97</span><span class="source-line-text">      url: listenerUrl,</span></span>
+<span class="source-line"><span class="source-line-number">98</span><span class="source-line-text">      stop: yield* makeStop(state, unpublishMdns),</span></span>
+<span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">  },</span></span></code></pre>
+</details>：listen 对外启动 HTTP server。
+3. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/api.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/api.ts:30-62</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">export const RootHttpApi = HttpApi.make(&quot;opencode-root&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">  .addHttpApi(ControlApi)</span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">  .addHttpApi(GlobalApi)</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">  .middleware(SchemaErrorMiddleware)</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text">  .middleware(Authorization)</span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">export const InstanceHttpApi = HttpApi.make(&quot;opencode-instance&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">  .addHttpApi(ConfigApi)</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">  .addHttpApi(ExperimentalApi)</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">  .addHttpApi(FileApi)</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  .addHttpApi(InstanceApi)</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">  .addHttpApi(McpApi)</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">  .addHttpApi(ProjectApi)</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">  .addHttpApi(PtyApi)</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  .addHttpApi(QuestionApi)</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">  .addHttpApi(PermissionApi)</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  .addHttpApi(ProviderApi)</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">  .addHttpApi(SessionApi)</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  .addHttpApi(SyncApi)</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  .addHttpApi(V2Api)</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">  .addHttpApi(TuiApi)</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  .addHttpApi(WorkspaceApi)</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">  .middleware(SchemaErrorMiddleware)</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">export const OpenCodeHttpApi = HttpApi.make(&quot;opencode&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  .addHttpApi(RootHttpApi)</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">  .addHttpApi(EventApi)</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">  .addHttpApi(InstanceHttpApi)</span></span>
+<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">  .addHttpApi(PtyConnectApi)</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  .annotate(HttpApi.AdditionalSchemas, [EventSchema, ...SyncEventSchemas])</span></span>
+<span class="source-line"><span class="source-line-number">60</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">export type RootHttpApiType = typeof RootHttpApi</span></span>
+<span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">export type InstanceHttpApiType = typeof InstanceHttpApi</span></span></code></pre>
+</details>：API group 组合。
+4. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/server.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/server.ts:103-151</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">// Route tree:</span></span>
+<span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">// - rootApiRoutes: typed /global/* and control routes; auth is declared by RootHttpApi.</span></span>
+<span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">// - eventApiRoutes/rawInstanceRoutes: raw instance routes; auth and workspace routing happen as router middleware.</span></span>
+<span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">// - instanceApiRoutes: schema routes; auth is declared on each group and workspace context is provided below.</span></span>
+<span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">// - uiRoute: raw catch-all fallback; auth is router middleware so public static assets can bypass it.</span></span>
+<span class="source-line"><span class="source-line-number">108</span><span class="source-line-text">const authOnlyRouterLayer = authorizationRouterMiddleware.layer.pipe(Layer.provide(ServerAuth.Config.defaultLayer))</span></span>
+<span class="source-line"><span class="source-line-number">109</span><span class="source-line-text">const httpApiAuthLayer = authorizationLayer.pipe(Layer.provide(ServerAuth.Config.defaultLayer))</span></span>
+<span class="source-line"><span class="source-line-number">110</span><span class="source-line-text">const rootApiRoutes = HttpApiBuilder.layer(RootHttpApi).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">111</span><span class="source-line-text">  Layer.provide([controlHandlers, globalHandlers]),</span></span>
+<span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">  Layer.provide(schemaErrorLayer),</span></span>
+<span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">  Layer.provide(httpApiAuthLayer),</span></span>
+<span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">)</span></span>
+<span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">const instanceRouterLayer = authorizationRouterMiddleware</span></span>
+<span class="source-line"><span class="source-line-number">116</span><span class="source-line-text">  .combine(instanceRouterMiddleware)</span></span>
+<span class="source-line"><span class="source-line-number">117</span><span class="source-line-text">  .combine(workspaceRouterMiddleware)</span></span>
+<span class="source-line"><span class="source-line-number">118</span><span class="source-line-text">  .layer.pipe(Layer.provide(Socket.layerWebSocketConstructorGlobal), Layer.provide(ServerAuth.Config.defaultLayer))</span></span>
+<span class="source-line"><span class="source-line-number">119</span><span class="source-line-text">const eventApiRoutes = HttpApiBuilder.layer(EventApi).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">  Layer.provide(eventHandlers),</span></span>
+<span class="source-line"><span class="source-line-number">121</span><span class="source-line-text">  Layer.provide(instanceRouterLayer),</span></span>
+<span class="source-line"><span class="source-line-number">122</span><span class="source-line-text">)</span></span>
+<span class="source-line"><span class="source-line-number">123</span><span class="source-line-text">const instanceApiRoutes = HttpApiBuilder.layer(InstanceHttpApi).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">124</span><span class="source-line-text">  Layer.provide([</span></span>
+<span class="source-line"><span class="source-line-number">125</span><span class="source-line-text">    configHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">    experimentalHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text">    fileHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">    instanceHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">    mcpHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">    projectHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">    ptyHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">    questionHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">    permissionHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">    providerHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">    sessionHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">    syncHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">    v2Handlers,</span></span>
+<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text">    tuiHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">    workspaceHandlers,</span></span>
+<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">  ]),</span></span>
+<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">)</span></span>
+<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">const rawInstanceRoutes = Layer.mergeAll(ptyConnectRoute).pipe(Layer.provide(instanceRouterLayer))</span></span>
+<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">const instanceRoutes = Layer.mergeAll(rawInstanceRoutes, instanceApiRoutes).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">  Layer.provide([</span></span>
+<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">    httpApiAuthLayer,</span></span>
+<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">    workspaceRoutingLayer.pipe(Layer.provide(Socket.layerWebSocketConstructorGlobal)),</span></span>
+<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">    instanceContextLayer,</span></span>
+<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">    schemaErrorLayer,</span></span>
+<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">  ]),</span></span>
+<span class="source-line"><span class="source-line-number">151</span><span class="source-line-text">)</span></span></code></pre>
+</details>：root/event/instance routes 分层。
+5. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/server.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">export function createRoutes(</span></span>
+<span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">  corsOptions?: CorsOptions,</span></span>
+<span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">): Layer.Layer&lt;never, EffectConfig.ConfigError, RouteRequirements&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">  return Layer.mergeAll(rootApiRoutes, eventApiRoutes, instanceRoutes, docRoute, uiRoute).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">    Layer.provide([</span></span>
+<span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">      errorLayer,</span></span>
+<span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      compressionLayer,</span></span>
+<span class="source-line"><span class="source-line-number">189</span><span class="source-line-text">      corsVaryFix,</span></span>
+<span class="source-line"><span class="source-line-number">190</span><span class="source-line-text">      fenceLayer,</span></span>
+<span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">      cors(corsOptions),</span></span>
+<span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">      Account.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">      Agent.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">      Auth.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">      Command.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">      Config.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">      File.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">      FileWatcher.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">      Format.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">      LSP.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">      Installation.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">      MCP.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">203</span><span class="source-line-text">      ModelsDev.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      Permission.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">205</span><span class="source-line-text">      Plugin.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      Project.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">      ProviderAuth.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">      Provider.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">      Pty.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">      PtyTicket.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">      Question.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">      Ripgrep.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">      RuntimeFlags.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">      Session.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">      SessionCompaction.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">      SessionPrompt.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">      SessionRevert.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">      SessionShare.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">      SessionRunState.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">      SessionStatus.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">      SessionSummary.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">      ShareNext.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">      Snapshot.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">      SyncEvent.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">      EventV2Bridge.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">226</span><span class="source-line-text">      Skill.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">227</span><span class="source-line-text">      Todo.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">228</span><span class="source-line-text">      ToolRegistry.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">229</span><span class="source-line-text">      Vcs.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">230</span><span class="source-line-text">      Workspace.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">231</span><span class="source-line-text">      Worktree.appLayer,</span></span>
+<span class="source-line"><span class="source-line-number">232</span><span class="source-line-text">      Bus.layer,</span></span>
+<span class="source-line"><span class="source-line-number">233</span><span class="source-line-text">      AppFileSystem.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">234</span><span class="source-line-text">      FetchHttpClient.layer,</span></span>
+<span class="source-line"><span class="source-line-number">235</span><span class="source-line-text">      HttpServer.layerServices,</span></span>
+<span class="source-line"><span class="source-line-number">236</span><span class="source-line-text">    ]),</span></span>
+<span class="source-line"><span class="source-line-number">237</span><span class="source-line-text">    Layer.provide(Layer.succeed(CorsConfig)(corsOptions)),</span></span>
+<span class="source-line"><span class="source-line-number">238</span><span class="source-line-text">    Layer.provide(InstanceLayer.layer),</span></span>
+<span class="source-line"><span class="source-line-number">239</span><span class="source-line-text">    Layer.provide(Observability.layer),</span></span>
+<span class="source-line"><span class="source-line-number">240</span><span class="source-line-text">  )</span></span></code></pre>
+</details>：createRoutes 装配 services。
+6. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/groups/session.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:312-363</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">312</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;prompt&quot;, SessionPaths.prompt, {</span></span>
+<span class="source-line"><span class="source-line-number">313</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">314</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">315</span><span class="source-line-text">          payload: PromptPayload,</span></span>
+<span class="source-line"><span class="source-line-number">316</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">317</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">318</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">319</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">320</span><span class="source-line-text">            identifier: &quot;session.prompt&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">321</span><span class="source-line-text">            summary: &quot;Send message&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">322</span><span class="source-line-text">            description: &quot;Create and send a new message to a session, streaming the AI response.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">323</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">324</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">325</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;promptAsync&quot;, SessionPaths.promptAsync, {</span></span>
+<span class="source-line"><span class="source-line-number">326</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">327</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">328</span><span class="source-line-text">          payload: PromptPayload,</span></span>
+<span class="source-line"><span class="source-line-number">329</span><span class="source-line-text">          success: described(HttpApiSchema.NoContent, &quot;Prompt accepted&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">330</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">331</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">332</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">333</span><span class="source-line-text">            identifier: &quot;session.prompt_async&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">334</span><span class="source-line-text">            summary: &quot;Send async message&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">335</span><span class="source-line-text">            description:</span></span>
+<span class="source-line"><span class="source-line-number">336</span><span class="source-line-text">              &quot;Create and send a new message to a session asynchronously, starting the session if needed and returning immediately.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">337</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">338</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">339</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;command&quot;, SessionPaths.command, {</span></span>
+<span class="source-line"><span class="source-line-number">340</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">341</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">342</span><span class="source-line-text">          payload: CommandPayload,</span></span>
+<span class="source-line"><span class="source-line-number">343</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">344</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">345</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">346</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">347</span><span class="source-line-text">            identifier: &quot;session.command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">348</span><span class="source-line-text">            summary: &quot;Send command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">349</span><span class="source-line-text">            description: &quot;Send a new command to a session for execution by the AI assistant.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">350</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">351</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">352</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;shell&quot;, SessionPaths.shell, {</span></span>
+<span class="source-line"><span class="source-line-number">353</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">354</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">355</span><span class="source-line-text">          payload: ShellPayload,</span></span>
+<span class="source-line"><span class="source-line-number">356</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">357</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">358</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">359</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">360</span><span class="source-line-text">            identifier: &quot;session.shell&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">361</span><span class="source-line-text">            summary: &quot;Run shell command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">362</span><span class="source-line-text">            description: &quot;Execute a shell command within the session context and return the AI's response.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">363</span><span class="source-line-text">          }),</span></span></code></pre>
+</details>：session prompt/command/shell endpoint。
+7. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/groups/event.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/groups/event.ts:9-24</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">9</span><span class="source-line-text">export const EventApi = HttpApi.make(&quot;event&quot;).add(</span></span>
+<span class="source-line"><span class="source-line-number">10</span><span class="source-line-text">  HttpApiGroup.make(&quot;event&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">11</span><span class="source-line-text">    .add(</span></span>
+<span class="source-line"><span class="source-line-number">12</span><span class="source-line-text">      HttpApiEndpoint.get(&quot;subscribe&quot;, EventPaths.event, {</span></span>
+<span class="source-line"><span class="source-line-number">13</span><span class="source-line-text">        query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">14</span><span class="source-line-text">        success: Schema.String.pipe(HttpApiSchema.asText({ contentType: &quot;text/event-stream&quot; })),</span></span>
+<span class="source-line"><span class="source-line-number">15</span><span class="source-line-text">      }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">16</span><span class="source-line-text">        OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">17</span><span class="source-line-text">          identifier: &quot;event.subscribe&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">18</span><span class="source-line-text">          summary: &quot;Subscribe to events&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">19</span><span class="source-line-text">          description: &quot;Get events&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">20</span><span class="source-line-text">        }),</span></span>
+<span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">      ),</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">    .annotateMerge(OpenApi.annotations({ title: &quot;event&quot;, description: &quot;Instance event stream route.&quot; })),</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">)</span></span></code></pre>
+</details>：SSE event API 定义。
+8. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">function eventResponse(bus: Bus.Interface) {</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">  return Effect.gen(function* () {</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">    // Subscribe eagerly: the bus subscription is acquired in the request scope</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">    // at this yield, so any publish from now on is queued for the body-pump</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">    // fiber to drain — closing the race where Stream.concat(server.connected,</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">    // lazy-subscribe) used to drop publishes in the prefix-consume window.</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text">    const events = (yield* bus.subscribeAll()).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">      Stream.takeUntil((event) =&gt; event.type === Bus.InstanceDisposed.type),</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">    const heartbeat = Stream.tick(&quot;10 seconds&quot;).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">      Stream.drop(1),</span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">      Stream.map(() =&gt; ({ id: Bus.createID(), type: &quot;server.heartbeat&quot;, properties: {} })),</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">    log.info(&quot;event connected&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">    return HttpServerResponse.stream(</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      Stream.make({ id: Bus.createID(), type: &quot;server.connected&quot;, properties: {} }).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">        Stream.concat(events.pipe(Stream.merge(heartbeat, { haltStrategy: &quot;left&quot; }))),</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">        Stream.map(eventData),</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">        Stream.pipeThroughChannel(Sse.encode()),</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">        Stream.encodeText,</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">        Stream.ensuring(Effect.sync(() =&gt; log.info(&quot;event disconnected&quot;))),</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">      ),</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">      {</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">        contentType: &quot;text/event-stream&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">        headers: {</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">          &quot;Cache-Control&quot;: &quot;no-cache, no-transform&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">          &quot;X-Accel-Buffering&quot;: &quot;no&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">          &quot;X-Content-Type-Options&quot;: &quot;nosniff&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">        },</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">      },</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  })</span></span></code></pre>
+</details>：SSE event response。
+9. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/client.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/client.ts:33-57</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">export function createOpencodeClient(config?: Config &amp; { directory?: string }) {</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text">  if (!config?.fetch) {</span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">    const customFetch: any = (req: any) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">      // @ts-ignore</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      req.timeout = false</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">      return fetch(req)</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">    config = {</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">      ...config,</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">      fetch: customFetch,</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  if (config?.directory) {</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">    config.headers = {</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">      ...config.headers,</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">      &quot;x-opencode-directory&quot;: encodeURIComponent(config.directory),</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  const client = createClient(config)</span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">  client.interceptors.request.use((request) =&gt; rewrite(request, config?.directory))</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  client.interceptors.error.use(wrapClientError)</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">  return new OpencodeClient({ client })</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">}</span></span></code></pre>
+</details>：JS SDK client wrapper。
+10. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/server.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/server.ts:22-134</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">export async function createOpencodeServer(options?: ServerOptions) {</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">  options = Object.assign(</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">    {</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">      hostname: &quot;127.0.0.1&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">      port: 4096,</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text">      timeout: 5000,</span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">    options ?? {},</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">  )</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">  const args = [`serve`, `--hostname=${options.hostname}`, `--port=${options.port}`]</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">  if (options.config?.logLevel) args.push(`--log-level=${options.config.logLevel}`)</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">  const proc = launch(`opencode`, args, {</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">    env: {</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      ...process.env,</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">      OPENCODE_CONFIG_CONTENT: JSON.stringify(options.config ?? {}),</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  })</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">  let clear = () =&gt; {}</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">  const url = await new Promise&lt;string&gt;((resolve, reject) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">    const id = setTimeout(() =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">      clear()</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">      stop(proc)</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">      reject(new Error(`Timeout waiting for server to start after ${options.timeout}ms`))</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">    }, options.timeout)</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">    let output = &quot;&quot;</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">    let resolved = false</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">    proc.stdout?.on(&quot;data&quot;, (chunk) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">      if (resolved) return</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">      output += chunk.toString()</span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">      const lines = output.split(&quot;\n&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">      for (const line of lines) {</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">        if (line.startsWith(&quot;opencode server listening&quot;)) {</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">          const match = line.match(/on\s+(https?:\/\/[^\s]+)/)</span></span>
+<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">          if (!match) {</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">            clear()</span></span>
+<span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">            stop(proc)</span></span>
+<span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">            clearTimeout(id)</span></span>
+<span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">            reject(new Error(`Failed to parse server url from output: ${line}`))</span></span>
+<span class="source-line"><span class="source-line-number">63</span><span class="source-line-text">            return</span></span>
+<span class="source-line"><span class="source-line-number">64</span><span class="source-line-text">          }</span></span>
+<span class="source-line"><span class="source-line-number">65</span><span class="source-line-text">          clearTimeout(id)</span></span>
+<span class="source-line"><span class="source-line-number">66</span><span class="source-line-text">          resolved = true</span></span>
+<span class="source-line"><span class="source-line-number">67</span><span class="source-line-text">          resolve(match[1]!)</span></span>
+<span class="source-line"><span class="source-line-number">68</span><span class="source-line-text">          return</span></span>
+<span class="source-line"><span class="source-line-number">69</span><span class="source-line-text">        }</span></span>
+<span class="source-line"><span class="source-line-number">70</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">71</span><span class="source-line-text">    })</span></span>
+<span class="source-line"><span class="source-line-number">72</span><span class="source-line-text">    proc.stderr?.on(&quot;data&quot;, (chunk) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">73</span><span class="source-line-text">      output += chunk.toString()</span></span>
+<span class="source-line"><span class="source-line-number">74</span><span class="source-line-text">    })</span></span>
+<span class="source-line"><span class="source-line-number">75</span><span class="source-line-text">    proc.on(&quot;exit&quot;, (code) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">76</span><span class="source-line-text">      clearTimeout(id)</span></span>
+<span class="source-line"><span class="source-line-number">77</span><span class="source-line-text">      let msg = `Server exited with code ${code}`</span></span>
+<span class="source-line"><span class="source-line-number">78</span><span class="source-line-text">      if (output.trim()) {</span></span>
+<span class="source-line"><span class="source-line-number">79</span><span class="source-line-text">        msg += `\nServer output: ${output}`</span></span>
+<span class="source-line"><span class="source-line-number">80</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">81</span><span class="source-line-text">      reject(new Error(msg))</span></span>
+<span class="source-line"><span class="source-line-number">82</span><span class="source-line-text">    })</span></span>
+<span class="source-line"><span class="source-line-number">83</span><span class="source-line-text">    proc.on(&quot;error&quot;, (error) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">84</span><span class="source-line-text">      clearTimeout(id)</span></span>
+<span class="source-line"><span class="source-line-number">85</span><span class="source-line-text">      reject(error)</span></span>
+<span class="source-line"><span class="source-line-number">86</span><span class="source-line-text">    })</span></span>
+<span class="source-line"><span class="source-line-number">87</span><span class="source-line-text">    clear = bindAbort(proc, options.signal, () =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">88</span><span class="source-line-text">      clearTimeout(id)</span></span>
+<span class="source-line"><span class="source-line-number">89</span><span class="source-line-text">      reject(options.signal?.reason)</span></span>
+<span class="source-line"><span class="source-line-number">90</span><span class="source-line-text">    })</span></span>
+<span class="source-line"><span class="source-line-number">91</span><span class="source-line-text">  })</span></span>
+<span class="source-line"><span class="source-line-number">92</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">93</span><span class="source-line-text">  return {</span></span>
+<span class="source-line"><span class="source-line-number">94</span><span class="source-line-text">    url,</span></span>
+<span class="source-line"><span class="source-line-number">95</span><span class="source-line-text">    close() {</span></span>
+<span class="source-line"><span class="source-line-number">96</span><span class="source-line-text">      clear()</span></span>
+<span class="source-line"><span class="source-line-number">97</span><span class="source-line-text">      stop(proc)</span></span>
+<span class="source-line"><span class="source-line-number">98</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">}</span></span>
+<span class="source-line"><span class="source-line-number">101</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">export function createOpencodeTui(options?: TuiOptions) {</span></span>
+<span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">  const args = []</span></span>
+<span class="source-line"><span class="source-line-number">104</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">  if (options?.project) {</span></span>
+<span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">    args.push(`--project=${options.project}`)</span></span>
+<span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">108</span><span class="source-line-text">  if (options?.model) {</span></span>
+<span class="source-line"><span class="source-line-number">109</span><span class="source-line-text">    args.push(`--model=${options.model}`)</span></span>
+<span class="source-line"><span class="source-line-number">110</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">111</span><span class="source-line-text">  if (options?.session) {</span></span>
+<span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">    args.push(`--session=${options.session}`)</span></span>
+<span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">  if (options?.agent) {</span></span>
+<span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">    args.push(`--agent=${options.agent}`)</span></span>
+<span class="source-line"><span class="source-line-number">116</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">117</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">118</span><span class="source-line-text">  const proc = launch(`opencode`, args, {</span></span>
+<span class="source-line"><span class="source-line-number">119</span><span class="source-line-text">    stdio: &quot;inherit&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">    env: {</span></span>
+<span class="source-line"><span class="source-line-number">121</span><span class="source-line-text">      ...process.env,</span></span>
+<span class="source-line"><span class="source-line-number">122</span><span class="source-line-text">      OPENCODE_CONFIG_CONTENT: JSON.stringify(options?.config ?? {}),</span></span>
+<span class="source-line"><span class="source-line-number">123</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">124</span><span class="source-line-text">  })</span></span>
+<span class="source-line"><span class="source-line-number">125</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">  const clear = bindAbort(proc, options?.signal)</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">  return {</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">    close() {</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">      clear()</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">      stop(proc)</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">}</span></span></code></pre>
+</details>：启动 server/TUI 的 SDK helper。
+11. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:43-55</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">export interface Interface {</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  readonly trigger: &lt;</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">    Name extends TriggerName,</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">    Input = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[0],</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">    Output = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[1],</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  &gt;(</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">    name: Name,</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">    input: Input,</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">    output: Output,</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">  ) =&gt; Effect.Effect&lt;Output&gt;</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  readonly list: () =&gt; Effect.Effect&lt;Hooks[]&gt;</span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">  readonly init: () =&gt; Effect.Effect&lt;void&gt;</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">}</span></span></code></pre>
+</details>：Plugin service interface。
+12. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:126-150</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">        const { Server } = yield* Effect.promise(() =&gt; import(&quot;../server/server&quot;))</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">        const client = createOpencodeClient({</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">          baseUrl: &quot;http://localhost:4096&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">          headers: ServerAuth.headers(),</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">          fetch: async (...args) =&gt; Server.Default().app.fetch(...args),</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">        })</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">        const cfg = yield* config.get()</span></span>
+<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">        const input: PluginInput = {</span></span>
+<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">          client,</span></span>
+<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">          project: ctx.project,</span></span>
+<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text">          worktree: ctx.worktree,</span></span>
+<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">          experimental_workspace: {</span></span>
+<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">            register(type: string, adapter: PluginWorkspaceAdapter) {</span></span>
+<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">              registerAdapter(ctx.project.id, type, adapter as WorkspaceAdapter)</span></span>
+<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">            },</span></span>
+<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">          get serverUrl(): URL {</span></span>
+<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">            return Server.url ?? new URL(&quot;http://localhost:4096&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">          // @ts-expect-error</span></span>
+<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">          $: typeof Bun === &quot;undefined&quot; ? undefined : Bun.$,</span></span>
+<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">        }</span></span></code></pre>
+</details>：PluginInput。
+13. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:261-274</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">261</span><span class="source-line-text">    const trigger = Effect.fn(&quot;Plugin.trigger&quot;)(function* &lt;</span></span>
+<span class="source-line"><span class="source-line-number">262</span><span class="source-line-text">      Name extends TriggerName,</span></span>
+<span class="source-line"><span class="source-line-number">263</span><span class="source-line-text">      Input = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[0],</span></span>
+<span class="source-line"><span class="source-line-number">264</span><span class="source-line-text">      Output = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[1],</span></span>
+<span class="source-line"><span class="source-line-number">265</span><span class="source-line-text">    &gt;(name: Name, input: Input, output: Output) {</span></span>
+<span class="source-line"><span class="source-line-number">266</span><span class="source-line-text">      if (!name) return output</span></span>
+<span class="source-line"><span class="source-line-number">267</span><span class="source-line-text">      const s = yield* InstanceState.get(state)</span></span>
+<span class="source-line"><span class="source-line-number">268</span><span class="source-line-text">      for (const hook of s.hooks) {</span></span>
+<span class="source-line"><span class="source-line-number">269</span><span class="source-line-text">        const fn = hook[name] as any</span></span>
+<span class="source-line"><span class="source-line-number">270</span><span class="source-line-text">        if (!fn) continue</span></span>
+<span class="source-line"><span class="source-line-number">271</span><span class="source-line-text">        yield* Effect.promise(async () =&gt; fn(input, output))</span></span>
+<span class="source-line"><span class="source-line-number">272</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">273</span><span class="source-line-text">      return output</span></span>
+<span class="source-line"><span class="source-line-number">274</span><span class="source-line-text">    })</span></span></code></pre>
+</details>：Plugin.trigger。
+14. <details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/plugin/src/index.ts</span>
+    <span class="source-ref-path"><code>packages/plugin/src/index.ts:56-80</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">export type PluginInput = {</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">  client: ReturnType&lt;typeof createOpencodeClient&gt;</span></span>
+<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">  project: Project</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  directory: string</span></span>
+<span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">  worktree: string</span></span>
+<span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">  experimental_workspace: {</span></span>
+<span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">    register(type: string, adapter: WorkspaceAdapter): void</span></span>
+<span class="source-line"><span class="source-line-number">63</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">64</span><span class="source-line-text">  serverUrl: URL</span></span>
+<span class="source-line"><span class="source-line-number">65</span><span class="source-line-text">  $: BunShell</span></span>
+<span class="source-line"><span class="source-line-number">66</span><span class="source-line-text">}</span></span>
+<span class="source-line"><span class="source-line-number">67</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">68</span><span class="source-line-text">export type PluginOptions = Record&lt;string, unknown&gt;</span></span>
+<span class="source-line"><span class="source-line-number">69</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">70</span><span class="source-line-text">export type Config = Omit&lt;SDKConfig, &quot;plugin&quot;&gt; &amp; {</span></span>
+<span class="source-line"><span class="source-line-number">71</span><span class="source-line-text">  plugin?: Array&lt;string | [string, PluginOptions]&gt;</span></span>
+<span class="source-line"><span class="source-line-number">72</span><span class="source-line-text">}</span></span>
+<span class="source-line"><span class="source-line-number">73</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">74</span><span class="source-line-text">export type Plugin = (input: PluginInput, options?: PluginOptions) =&gt; Promise&lt;Hooks&gt;</span></span>
+<span class="source-line"><span class="source-line-number">75</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">76</span><span class="source-line-text">export type PluginModule = {</span></span>
+<span class="source-line"><span class="source-line-number">77</span><span class="source-line-text">  id?: string</span></span>
+<span class="source-line"><span class="source-line-number">78</span><span class="source-line-text">  server: Plugin</span></span>
+<span class="source-line"><span class="source-line-number">79</span><span class="source-line-text">  tui?: never</span></span>
+<span class="source-line"><span class="source-line-number">80</span><span class="source-line-text">}</span></span></code></pre>
+</details>：插件包对外类型。
 
 ## 6. 用户输入到 agent 行动的整体链路
 
@@ -160,7 +1077,42 @@ export const OpenCodeHttpApi = HttpApi.make("opencode")
   .addHttpApi(PtyConnectApi)
 ```
 
-路径：`packages/opencode/src/server/routes/instance/httpapi/api.ts:30-59`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/api.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/api.ts:30-59</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">export const RootHttpApi = HttpApi.make(&quot;opencode-root&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">  .addHttpApi(ControlApi)</span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">  .addHttpApi(GlobalApi)</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">  .middleware(SchemaErrorMiddleware)</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text">  .middleware(Authorization)</span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">export const InstanceHttpApi = HttpApi.make(&quot;opencode-instance&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">  .addHttpApi(ConfigApi)</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">  .addHttpApi(ExperimentalApi)</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">  .addHttpApi(FileApi)</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  .addHttpApi(InstanceApi)</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">  .addHttpApi(McpApi)</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">  .addHttpApi(ProjectApi)</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">  .addHttpApi(PtyApi)</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  .addHttpApi(QuestionApi)</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">  .addHttpApi(PermissionApi)</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  .addHttpApi(ProviderApi)</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">  .addHttpApi(SessionApi)</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  .addHttpApi(SyncApi)</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  .addHttpApi(V2Api)</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">  .addHttpApi(TuiApi)</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  .addHttpApi(WorkspaceApi)</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">  .middleware(SchemaErrorMiddleware)</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">export const OpenCodeHttpApi = HttpApi.make(&quot;opencode&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  .addHttpApi(RootHttpApi)</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">  .addHttpApi(EventApi)</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">  .addHttpApi(InstanceHttpApi)</span></span>
+<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">  .addHttpApi(PtyConnectApi)</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  .annotate(HttpApi.AdditionalSchemas, [EventSchema, ...SyncEventSchemas])</span></span></code></pre>
+</details>
 
 这说明 HTTP API 是模块化 group，不是一个巨大 controller 文件。
 
@@ -205,7 +1157,71 @@ export function createRoutes(
 }
 ```
 
-路径：`packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/server.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/server.ts:182-240</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">export function createRoutes(</span></span>
+<span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">  corsOptions?: CorsOptions,</span></span>
+<span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">): Layer.Layer&lt;never, EffectConfig.ConfigError, RouteRequirements&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">  return Layer.mergeAll(rootApiRoutes, eventApiRoutes, instanceRoutes, docRoute, uiRoute).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">    Layer.provide([</span></span>
+<span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">      errorLayer,</span></span>
+<span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      compressionLayer,</span></span>
+<span class="source-line"><span class="source-line-number">189</span><span class="source-line-text">      corsVaryFix,</span></span>
+<span class="source-line"><span class="source-line-number">190</span><span class="source-line-text">      fenceLayer,</span></span>
+<span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">      cors(corsOptions),</span></span>
+<span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">      Account.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">      Agent.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">      Auth.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">      Command.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">      Config.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">      File.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">      FileWatcher.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">      Format.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">      LSP.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">      Installation.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">      MCP.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">203</span><span class="source-line-text">      ModelsDev.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      Permission.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">205</span><span class="source-line-text">      Plugin.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      Project.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">      ProviderAuth.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">      Provider.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">      Pty.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">      PtyTicket.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">      Question.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">      Ripgrep.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">      RuntimeFlags.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">      Session.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">      SessionCompaction.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">      SessionPrompt.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">      SessionRevert.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">      SessionShare.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">      SessionRunState.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">      SessionStatus.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">      SessionSummary.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">      ShareNext.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">      Snapshot.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">      SyncEvent.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">      EventV2Bridge.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">226</span><span class="source-line-text">      Skill.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">227</span><span class="source-line-text">      Todo.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">228</span><span class="source-line-text">      ToolRegistry.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">229</span><span class="source-line-text">      Vcs.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">230</span><span class="source-line-text">      Workspace.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">231</span><span class="source-line-text">      Worktree.appLayer,</span></span>
+<span class="source-line"><span class="source-line-number">232</span><span class="source-line-text">      Bus.layer,</span></span>
+<span class="source-line"><span class="source-line-number">233</span><span class="source-line-text">      AppFileSystem.defaultLayer,</span></span>
+<span class="source-line"><span class="source-line-number">234</span><span class="source-line-text">      FetchHttpClient.layer,</span></span>
+<span class="source-line"><span class="source-line-number">235</span><span class="source-line-text">      HttpServer.layerServices,</span></span>
+<span class="source-line"><span class="source-line-number">236</span><span class="source-line-text">    ]),</span></span>
+<span class="source-line"><span class="source-line-number">237</span><span class="source-line-text">    Layer.provide(Layer.succeed(CorsConfig)(corsOptions)),</span></span>
+<span class="source-line"><span class="source-line-number">238</span><span class="source-line-text">    Layer.provide(InstanceLayer.layer),</span></span>
+<span class="source-line"><span class="source-line-number">239</span><span class="source-line-text">    Layer.provide(Observability.layer),</span></span>
+<span class="source-line"><span class="source-line-number">240</span><span class="source-line-text">  )</span></span></code></pre>
+</details>
 
 Java 类比：这是把 Controller、Service、Repository、EventBus、ToolRegistry、Provider 等全部放进 Spring ApplicationContext。
 
@@ -224,7 +1240,22 @@ export const Default = lazy(() => {
 })
 ```
 
-路径：`packages/opencode/src/server/server.ts:58-67`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/server.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/server.ts:58-67</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">export const Default = lazy(() =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  const handler = HttpApiApp.webHandler().handler</span></span>
+<span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">  const app: ServerApp = {</span></span>
+<span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">    fetch: (request: Request) =&gt; handler(request, HttpApiApp.context),</span></span>
+<span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">    request(input, init) {</span></span>
+<span class="source-line"><span class="source-line-number">63</span><span class="source-line-text">      return app.fetch(input instanceof Request ? input : new Request(new URL(input, &quot;http://localhost&quot;), init))</span></span>
+<span class="source-line"><span class="source-line-number">64</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">65</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">66</span><span class="source-line-text">  return { app }</span></span>
+<span class="source-line"><span class="source-line-number">67</span><span class="source-line-text">})</span></span></code></pre>
+</details>
 
 这就是为什么 CLI/TUI local 模式可以用 `Server.Default().app.fetch`，不必真的监听端口。
 
@@ -246,7 +1277,25 @@ HttpApiEndpoint.post("prompt", SessionPaths.prompt, {
 )
 ```
 
-路径：`packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:312-324`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/groups/session.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:312-324</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">312</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;prompt&quot;, SessionPaths.prompt, {</span></span>
+<span class="source-line"><span class="source-line-number">313</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">314</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">315</span><span class="source-line-text">          payload: PromptPayload,</span></span>
+<span class="source-line"><span class="source-line-number">316</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">317</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">318</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">319</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">320</span><span class="source-line-text">            identifier: &quot;session.prompt&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">321</span><span class="source-line-text">            summary: &quot;Send message&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">322</span><span class="source-line-text">            description: &quot;Create and send a new message to a session, streaming the AI response.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">323</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">324</span><span class="source-line-text">        ),</span></span></code></pre>
+</details>
 
 `command` 和 `shell` 也是同一组 session API：
 
@@ -255,7 +1304,37 @@ HttpApiEndpoint.post("command", SessionPaths.command, { ... })
 HttpApiEndpoint.post("shell", SessionPaths.shell, { ... })
 ```
 
-路径：`packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:339-363`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/groups/session.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:339-363</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">339</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;command&quot;, SessionPaths.command, {</span></span>
+<span class="source-line"><span class="source-line-number">340</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">341</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">342</span><span class="source-line-text">          payload: CommandPayload,</span></span>
+<span class="source-line"><span class="source-line-number">343</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">344</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">345</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">346</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">347</span><span class="source-line-text">            identifier: &quot;session.command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">348</span><span class="source-line-text">            summary: &quot;Send command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">349</span><span class="source-line-text">            description: &quot;Send a new command to a session for execution by the AI assistant.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">350</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">351</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">352</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;shell&quot;, SessionPaths.shell, {</span></span>
+<span class="source-line"><span class="source-line-number">353</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">354</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">355</span><span class="source-line-text">          payload: ShellPayload,</span></span>
+<span class="source-line"><span class="source-line-number">356</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">357</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">358</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">359</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">360</span><span class="source-line-text">            identifier: &quot;session.shell&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">361</span><span class="source-line-text">            summary: &quot;Run shell command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">362</span><span class="source-line-text">            description: &quot;Execute a shell command within the session context and return the AI's response.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">363</span><span class="source-line-text">          }),</span></span></code></pre>
+</details>
 
 ### 6.5 Event API / SSE
 
@@ -270,7 +1349,28 @@ export const EventApi = HttpApi.make("event").add(
 )
 ```
 
-路径：`packages/opencode/src/server/routes/instance/httpapi/groups/event.ts:9-24`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/groups/event.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/groups/event.ts:9-24</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">9</span><span class="source-line-text">export const EventApi = HttpApi.make(&quot;event&quot;).add(</span></span>
+<span class="source-line"><span class="source-line-number">10</span><span class="source-line-text">  HttpApiGroup.make(&quot;event&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">11</span><span class="source-line-text">    .add(</span></span>
+<span class="source-line"><span class="source-line-number">12</span><span class="source-line-text">      HttpApiEndpoint.get(&quot;subscribe&quot;, EventPaths.event, {</span></span>
+<span class="source-line"><span class="source-line-number">13</span><span class="source-line-text">        query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">14</span><span class="source-line-text">        success: Schema.String.pipe(HttpApiSchema.asText({ contentType: &quot;text/event-stream&quot; })),</span></span>
+<span class="source-line"><span class="source-line-number">15</span><span class="source-line-text">      }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">16</span><span class="source-line-text">        OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">17</span><span class="source-line-text">          identifier: &quot;event.subscribe&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">18</span><span class="source-line-text">          summary: &quot;Subscribe to events&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">19</span><span class="source-line-text">          description: &quot;Get events&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">20</span><span class="source-line-text">        }),</span></span>
+<span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">      ),</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">    .annotateMerge(OpenApi.annotations({ title: &quot;event&quot;, description: &quot;Instance event stream route.&quot; })),</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">)</span></span></code></pre>
+</details>
 
 handler 把 Bus events 和 heartbeat 编成 SSE：
 
@@ -294,7 +1394,45 @@ return HttpServerResponse.stream(
 )
 ```
 
-路径：`packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">function eventResponse(bus: Bus.Interface) {</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">  return Effect.gen(function* () {</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">    // Subscribe eagerly: the bus subscription is acquired in the request scope</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">    // at this yield, so any publish from now on is queued for the body-pump</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">    // fiber to drain — closing the race where Stream.concat(server.connected,</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">    // lazy-subscribe) used to drop publishes in the prefix-consume window.</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text">    const events = (yield* bus.subscribeAll()).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">      Stream.takeUntil((event) =&gt; event.type === Bus.InstanceDisposed.type),</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">    const heartbeat = Stream.tick(&quot;10 seconds&quot;).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">      Stream.drop(1),</span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">      Stream.map(() =&gt; ({ id: Bus.createID(), type: &quot;server.heartbeat&quot;, properties: {} })),</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">    log.info(&quot;event connected&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">    return HttpServerResponse.stream(</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      Stream.make({ id: Bus.createID(), type: &quot;server.connected&quot;, properties: {} }).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">        Stream.concat(events.pipe(Stream.merge(heartbeat, { haltStrategy: &quot;left&quot; }))),</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">        Stream.map(eventData),</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">        Stream.pipeThroughChannel(Sse.encode()),</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">        Stream.encodeText,</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">        Stream.ensuring(Effect.sync(() =&gt; log.info(&quot;event disconnected&quot;))),</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">      ),</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">      {</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">        contentType: &quot;text/event-stream&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">        headers: {</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">          &quot;Cache-Control&quot;: &quot;no-cache, no-transform&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">          &quot;X-Accel-Buffering&quot;: &quot;no&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">          &quot;X-Content-Type-Options&quot;: &quot;nosniff&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">        },</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">      },</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  })</span></span></code></pre>
+</details>
 
 ### 6.6 JS SDK client wrapper
 
@@ -325,7 +1463,37 @@ export function createOpencodeClient(config?: Config & { directory?: string }) {
 }
 ```
 
-路径：`packages/sdk/js/src/client.ts:33-57`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/client.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/client.ts:33-57</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">export function createOpencodeClient(config?: Config &amp; { directory?: string }) {</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text">  if (!config?.fetch) {</span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">    const customFetch: any = (req: any) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">      // @ts-ignore</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      req.timeout = false</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">      return fetch(req)</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">    config = {</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">      ...config,</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">      fetch: customFetch,</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  if (config?.directory) {</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">    config.headers = {</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">      ...config.headers,</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">      &quot;x-opencode-directory&quot;: encodeURIComponent(config.directory),</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  const client = createClient(config)</span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">  client.interceptors.request.use((request) =&gt; rewrite(request, config?.directory))</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  client.interceptors.error.use(wrapClientError)</span></span>
+<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">  return new OpencodeClient({ client })</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">}</span></span></code></pre>
+</details>
 
 `rewrite` 会把 GET/HEAD 的 `x-opencode-directory` 变成 query：
 
@@ -347,7 +1515,27 @@ function rewrite(request: Request, directory?: string) {
 }
 ```
 
-路径：`packages/sdk/js/src/client.ts:17-31`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/client.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/client.ts:17-31</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">17</span><span class="source-line-text">function rewrite(request: Request, directory?: string) {</span></span>
+<span class="source-line"><span class="source-line-number">18</span><span class="source-line-text">  if (request.method !== &quot;GET&quot; &amp;&amp; request.method !== &quot;HEAD&quot;) return request</span></span>
+<span class="source-line"><span class="source-line-number">19</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">20</span><span class="source-line-text">  const value = pick(request.headers.get(&quot;x-opencode-directory&quot;), directory)</span></span>
+<span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">  if (!value) return request</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">  const url = new URL(request.url)</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">  if (!url.searchParams.has(&quot;directory&quot;)) {</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">    url.searchParams.set(&quot;directory&quot;, value)</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">  const next = new Request(url, request)</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">  next.headers.delete(&quot;x-opencode-directory&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">  return next</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">}</span></span></code></pre>
+</details>
 
 ### 6.7 SDK helper 启动 server/TUI
 
@@ -375,7 +1563,31 @@ export async function createOpencodeServer(options?: ServerOptions) {
 }
 ```
 
-路径：`packages/sdk/js/src/server.ts:22-40`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/server.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/server.ts:22-40</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">export async function createOpencodeServer(options?: ServerOptions) {</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">  options = Object.assign(</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">    {</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">      hostname: &quot;127.0.0.1&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">      port: 4096,</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text">      timeout: 5000,</span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">    options ?? {},</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">  )</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">  const args = [`serve`, `--hostname=${options.hostname}`, `--port=${options.port}`]</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">  if (options.config?.logLevel) args.push(`--log-level=${options.config.logLevel}`)</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">  const proc = launch(`opencode`, args, {</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">    env: {</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      ...process.env,</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">      OPENCODE_CONFIG_CONTENT: JSON.stringify(options.config ?? {}),</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  })</span></span></code></pre>
+</details>
 
 启动 TUI：
 
@@ -398,7 +1610,45 @@ export function createOpencodeTui(options?: TuiOptions) {
 }
 ```
 
-路径：`packages/sdk/js/src/server.ts:102-134`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/server.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/server.ts:102-134</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">export function createOpencodeTui(options?: TuiOptions) {</span></span>
+<span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">  const args = []</span></span>
+<span class="source-line"><span class="source-line-number">104</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">  if (options?.project) {</span></span>
+<span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">    args.push(`--project=${options.project}`)</span></span>
+<span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">108</span><span class="source-line-text">  if (options?.model) {</span></span>
+<span class="source-line"><span class="source-line-number">109</span><span class="source-line-text">    args.push(`--model=${options.model}`)</span></span>
+<span class="source-line"><span class="source-line-number">110</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">111</span><span class="source-line-text">  if (options?.session) {</span></span>
+<span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">    args.push(`--session=${options.session}`)</span></span>
+<span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">  if (options?.agent) {</span></span>
+<span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">    args.push(`--agent=${options.agent}`)</span></span>
+<span class="source-line"><span class="source-line-number">116</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">117</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">118</span><span class="source-line-text">  const proc = launch(`opencode`, args, {</span></span>
+<span class="source-line"><span class="source-line-number">119</span><span class="source-line-text">    stdio: &quot;inherit&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">    env: {</span></span>
+<span class="source-line"><span class="source-line-number">121</span><span class="source-line-text">      ...process.env,</span></span>
+<span class="source-line"><span class="source-line-number">122</span><span class="source-line-text">      OPENCODE_CONFIG_CONTENT: JSON.stringify(options?.config ?? {}),</span></span>
+<span class="source-line"><span class="source-line-number">123</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">124</span><span class="source-line-text">  })</span></span>
+<span class="source-line"><span class="source-line-number">125</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">  const clear = bindAbort(proc, options?.signal)</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">  return {</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">    close() {</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">      clear()</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">      stop(proc)</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">    },</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">}</span></span></code></pre>
+</details>
 
 ### 6.8 Plugin service interface 和 trigger
 
@@ -418,7 +1668,25 @@ export interface Interface {
 }
 ```
 
-路径：`packages/opencode/src/plugin/index.ts:43-55`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:43-55</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">export interface Interface {</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  readonly trigger: &lt;</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">    Name extends TriggerName,</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">    Input = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[0],</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">    Output = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[1],</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  &gt;(</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">    name: Name,</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">    input: Input,</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">    output: Output,</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">  ) =&gt; Effect.Effect&lt;Output&gt;</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  readonly list: () =&gt; Effect.Effect&lt;Hooks[]&gt;</span></span>
+<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">  readonly init: () =&gt; Effect.Effect&lt;void&gt;</span></span>
+<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">}</span></span></code></pre>
+</details>
 
 插件加载时，OpenCode 给插件的输入：
 
@@ -446,7 +1714,37 @@ const input: PluginInput = {
 }
 ```
 
-路径：`packages/opencode/src/plugin/index.ts:126-150`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:126-150</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">        const { Server } = yield* Effect.promise(() =&gt; import(&quot;../server/server&quot;))</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">        const client = createOpencodeClient({</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">          baseUrl: &quot;http://localhost:4096&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">          headers: ServerAuth.headers(),</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">          fetch: async (...args) =&gt; Server.Default().app.fetch(...args),</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">        })</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">        const cfg = yield* config.get()</span></span>
+<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">        const input: PluginInput = {</span></span>
+<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">          client,</span></span>
+<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">          project: ctx.project,</span></span>
+<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text">          worktree: ctx.worktree,</span></span>
+<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">          experimental_workspace: {</span></span>
+<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">            register(type: string, adapter: PluginWorkspaceAdapter) {</span></span>
+<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">              registerAdapter(ctx.project.id, type, adapter as WorkspaceAdapter)</span></span>
+<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">            },</span></span>
+<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">          get serverUrl(): URL {</span></span>
+<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">            return Server.url ?? new URL(&quot;http://localhost:4096&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">          // @ts-expect-error</span></span>
+<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">          $: typeof Bun === &quot;undefined&quot; ? undefined : Bun.$,</span></span>
+<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">        }</span></span></code></pre>
+</details>
 
 trigger 执行 hooks：
 
@@ -463,7 +1761,26 @@ const trigger = Effect.fn("Plugin.trigger")(function* <Name extends TriggerName>
 })
 ```
 
-路径：`packages/opencode/src/plugin/index.ts:261-274`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:261-274</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">261</span><span class="source-line-text">    const trigger = Effect.fn(&quot;Plugin.trigger&quot;)(function* &lt;</span></span>
+<span class="source-line"><span class="source-line-number">262</span><span class="source-line-text">      Name extends TriggerName,</span></span>
+<span class="source-line"><span class="source-line-number">263</span><span class="source-line-text">      Input = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[0],</span></span>
+<span class="source-line"><span class="source-line-number">264</span><span class="source-line-text">      Output = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[1],</span></span>
+<span class="source-line"><span class="source-line-number">265</span><span class="source-line-text">    &gt;(name: Name, input: Input, output: Output) {</span></span>
+<span class="source-line"><span class="source-line-number">266</span><span class="source-line-text">      if (!name) return output</span></span>
+<span class="source-line"><span class="source-line-number">267</span><span class="source-line-text">      const s = yield* InstanceState.get(state)</span></span>
+<span class="source-line"><span class="source-line-number">268</span><span class="source-line-text">      for (const hook of s.hooks) {</span></span>
+<span class="source-line"><span class="source-line-number">269</span><span class="source-line-text">        const fn = hook[name] as any</span></span>
+<span class="source-line"><span class="source-line-number">270</span><span class="source-line-text">        if (!fn) continue</span></span>
+<span class="source-line"><span class="source-line-number">271</span><span class="source-line-text">        yield* Effect.promise(async () =&gt; fn(input, output))</span></span>
+<span class="source-line"><span class="source-line-number">272</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">273</span><span class="source-line-text">      return output</span></span>
+<span class="source-line"><span class="source-line-number">274</span><span class="source-line-text">    })</span></span></code></pre>
+</details>
 
 这就是 LLM 章看到的 `chat.params`、Shell 章看到的 `shell.env`、Tool 章看到的 `tool.execute.before/after` 的底层机制。
 
@@ -491,7 +1808,37 @@ export type PluginModule = {
 }
 ```
 
-路径：`packages/plugin/src/index.ts:56-80`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/plugin/src/index.ts</span>
+    <span class="source-ref-path"><code>packages/plugin/src/index.ts:56-80</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">export type PluginInput = {</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">  client: ReturnType&lt;typeof createOpencodeClient&gt;</span></span>
+<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">  project: Project</span></span>
+<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  directory: string</span></span>
+<span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">  worktree: string</span></span>
+<span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">  experimental_workspace: {</span></span>
+<span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">    register(type: string, adapter: WorkspaceAdapter): void</span></span>
+<span class="source-line"><span class="source-line-number">63</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">64</span><span class="source-line-text">  serverUrl: URL</span></span>
+<span class="source-line"><span class="source-line-number">65</span><span class="source-line-text">  $: BunShell</span></span>
+<span class="source-line"><span class="source-line-number">66</span><span class="source-line-text">}</span></span>
+<span class="source-line"><span class="source-line-number">67</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">68</span><span class="source-line-text">export type PluginOptions = Record&lt;string, unknown&gt;</span></span>
+<span class="source-line"><span class="source-line-number">69</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">70</span><span class="source-line-text">export type Config = Omit&lt;SDKConfig, &quot;plugin&quot;&gt; &amp; {</span></span>
+<span class="source-line"><span class="source-line-number">71</span><span class="source-line-text">  plugin?: Array&lt;string | [string, PluginOptions]&gt;</span></span>
+<span class="source-line"><span class="source-line-number">72</span><span class="source-line-text">}</span></span>
+<span class="source-line"><span class="source-line-number">73</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">74</span><span class="source-line-text">export type Plugin = (input: PluginInput, options?: PluginOptions) =&gt; Promise&lt;Hooks&gt;</span></span>
+<span class="source-line"><span class="source-line-number">75</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">76</span><span class="source-line-text">export type PluginModule = {</span></span>
+<span class="source-line"><span class="source-line-number">77</span><span class="source-line-text">  id?: string</span></span>
+<span class="source-line"><span class="source-line-number">78</span><span class="source-line-text">  server: Plugin</span></span>
+<span class="source-line"><span class="source-line-number">79</span><span class="source-line-text">  tui?: never</span></span>
+<span class="source-line"><span class="source-line-number">80</span><span class="source-line-text">}</span></span></code></pre>
+</details>
 
 插件包不是随便导出函数，而是有类型约束的 server plugin module。
 
@@ -509,17 +1856,146 @@ export type PluginModule = {
 
 CLI/TUI/Web/Desktop/Plugin 都倾向于使用 SDK，而不是手写 fetch。这样 session.prompt、permission.reply、event.subscribe、global.event 等调用方式一致。源码证据：
 
-- CLI run imports `createOpencodeClient`。来源：`packages/opencode/src/cli/cmd/run.ts:23`。
-- TUI SDK context 调用 `createOpencodeClient`。来源：`packages/opencode/src/cli/cmd/tui/context/sdk.tsx:1-31`。
-- Plugin service 给插件注入 SDK client。来源：`packages/opencode/src/plugin/index.ts:126-150`。
+- CLI run imports `createOpencodeClient`。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/cli/cmd/run.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/cli/cmd/run.ts:23</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">import { createOpencodeClient, type OpencodeClient, type ToolPart } from &quot;@opencode-ai/sdk/v2&quot;</span></span></code></pre>
+</details>。
+- TUI SDK context 调用 `createOpencodeClient`。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/cli/cmd/tui/context/sdk.tsx</span>
+    <span class="source-ref-path"><code>packages/opencode/src/cli/cmd/tui/context/sdk.tsx:1-31</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">1</span><span class="source-line-text">import { createOpencodeClient } from &quot;@opencode-ai/sdk/v2&quot;</span></span>
+<span class="source-line"><span class="source-line-number">2</span><span class="source-line-text">import type { GlobalEvent } from &quot;@opencode-ai/sdk/v2&quot;</span></span>
+<span class="source-line"><span class="source-line-number">3</span><span class="source-line-text">import { createSimpleContext } from &quot;./helper&quot;</span></span>
+<span class="source-line"><span class="source-line-number">4</span><span class="source-line-text">import { createGlobalEmitter } from &quot;@solid-primitives/event-bus&quot;</span></span>
+<span class="source-line"><span class="source-line-number">5</span><span class="source-line-text">import { Flag } from &quot;@opencode-ai/core/flag/flag&quot;</span></span>
+<span class="source-line"><span class="source-line-number">6</span><span class="source-line-text">import { batch, onCleanup, onMount } from &quot;solid-js&quot;</span></span>
+<span class="source-line"><span class="source-line-number">7</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">8</span><span class="source-line-text">export type EventSource = {</span></span>
+<span class="source-line"><span class="source-line-number">9</span><span class="source-line-text">  subscribe: (handler: (event: GlobalEvent) =&gt; void) =&gt; Promise&lt;() =&gt; void&gt;</span></span>
+<span class="source-line"><span class="source-line-number">10</span><span class="source-line-text">}</span></span>
+<span class="source-line"><span class="source-line-number">11</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">12</span><span class="source-line-text">export const { use: useSDK, provider: SDKProvider } = createSimpleContext({</span></span>
+<span class="source-line"><span class="source-line-number">13</span><span class="source-line-text">  name: &quot;SDK&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">14</span><span class="source-line-text">  init: (props: {</span></span>
+<span class="source-line"><span class="source-line-number">15</span><span class="source-line-text">    url: string</span></span>
+<span class="source-line"><span class="source-line-number">16</span><span class="source-line-text">    directory?: string</span></span>
+<span class="source-line"><span class="source-line-number">17</span><span class="source-line-text">    fetch?: typeof fetch</span></span>
+<span class="source-line"><span class="source-line-number">18</span><span class="source-line-text">    headers?: RequestInit[&quot;headers&quot;]</span></span>
+<span class="source-line"><span class="source-line-number">19</span><span class="source-line-text">    events?: EventSource</span></span>
+<span class="source-line"><span class="source-line-number">20</span><span class="source-line-text">  }) =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">    const abort = new AbortController()</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">    let sse: AbortController | undefined</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">    function createSDK() {</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">      return createOpencodeClient({</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">        baseUrl: props.url,</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text">        signal: abort.signal,</span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">        directory: props.directory,</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">        fetch: props.fetch,</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">        headers: props.headers,</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">      })</span></span></code></pre>
+</details>。
+- Plugin service 给插件注入 SDK client。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:126-150</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">        const { Server } = yield* Effect.promise(() =&gt; import(&quot;../server/server&quot;))</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">        const client = createOpencodeClient({</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">          baseUrl: &quot;http://localhost:4096&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">          headers: ServerAuth.headers(),</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">          fetch: async (...args) =&gt; Server.Default().app.fetch(...args),</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">        })</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">        const cfg = yield* config.get()</span></span>
+<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">        const input: PluginInput = {</span></span>
+<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">          client,</span></span>
+<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">          project: ctx.project,</span></span>
+<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text">          worktree: ctx.worktree,</span></span>
+<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">          directory: ctx.directory,</span></span>
+<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">          experimental_workspace: {</span></span>
+<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">            register(type: string, adapter: PluginWorkspaceAdapter) {</span></span>
+<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">              registerAdapter(ctx.project.id, type, adapter as WorkspaceAdapter)</span></span>
+<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">            },</span></span>
+<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">          get serverUrl(): URL {</span></span>
+<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">            return Server.url ?? new URL(&quot;http://localhost:4096&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">          },</span></span>
+<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">          // @ts-expect-error</span></span>
+<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">          $: typeof Bun === &quot;undefined&quot; ? undefined : Bun.$,</span></span>
+<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">        }</span></span></code></pre>
+</details>。
 
 ### 7.4 Event API 是 UI 实时性的基础
 
-SSE handler 先发 `server.connected`，再合并 bus events 和 heartbeat。这个设计避免 UI 只能靠轮询拿状态。来源：`packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53`。
+SSE handler 先发 `server.connected`，再合并 bus events 和 heartbeat。这个设计避免 UI 只能靠轮询拿状态。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">function eventResponse(bus: Bus.Interface) {</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">  return Effect.gen(function* () {</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">    // Subscribe eagerly: the bus subscription is acquired in the request scope</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">    // at this yield, so any publish from now on is queued for the body-pump</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">    // fiber to drain — closing the race where Stream.concat(server.connected,</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">    // lazy-subscribe) used to drop publishes in the prefix-consume window.</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text">    const events = (yield* bus.subscribeAll()).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">      Stream.takeUntil((event) =&gt; event.type === Bus.InstanceDisposed.type),</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">    const heartbeat = Stream.tick(&quot;10 seconds&quot;).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">      Stream.drop(1),</span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">      Stream.map(() =&gt; ({ id: Bus.createID(), type: &quot;server.heartbeat&quot;, properties: {} })),</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">    log.info(&quot;event connected&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">    return HttpServerResponse.stream(</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      Stream.make({ id: Bus.createID(), type: &quot;server.connected&quot;, properties: {} }).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">        Stream.concat(events.pipe(Stream.merge(heartbeat, { haltStrategy: &quot;left&quot; }))),</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">        Stream.map(eventData),</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">        Stream.pipeThroughChannel(Sse.encode()),</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">        Stream.encodeText,</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">        Stream.ensuring(Effect.sync(() =&gt; log.info(&quot;event disconnected&quot;))),</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">      ),</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">      {</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">        contentType: &quot;text/event-stream&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">        headers: {</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">          &quot;Cache-Control&quot;: &quot;no-cache, no-transform&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">          &quot;X-Accel-Buffering&quot;: &quot;no&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">          &quot;X-Content-Type-Options&quot;: &quot;nosniff&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">        },</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">      },</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  })</span></span></code></pre>
+</details>。
 
 ### 7.5 Plugin 是受控扩展，不是随意 monkey patch
 
-Plugin 系统加载 hooks，然后在运行时显式调用 `Plugin.trigger(name, input, output)`。插件只能在 OpenCode 暴露的 hook 点影响流程，不是随意改内部对象。来源：`packages/opencode/src/plugin/index.ts:261-274`。
+Plugin 系统加载 hooks，然后在运行时显式调用 `Plugin.trigger(name, input, output)`。插件只能在 OpenCode 暴露的 hook 点影响流程，不是随意改内部对象。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:261-274</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">261</span><span class="source-line-text">    const trigger = Effect.fn(&quot;Plugin.trigger&quot;)(function* &lt;</span></span>
+<span class="source-line"><span class="source-line-number">262</span><span class="source-line-text">      Name extends TriggerName,</span></span>
+<span class="source-line"><span class="source-line-number">263</span><span class="source-line-text">      Input = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[0],</span></span>
+<span class="source-line"><span class="source-line-number">264</span><span class="source-line-text">      Output = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[1],</span></span>
+<span class="source-line"><span class="source-line-number">265</span><span class="source-line-text">    &gt;(name: Name, input: Input, output: Output) {</span></span>
+<span class="source-line"><span class="source-line-number">266</span><span class="source-line-text">      if (!name) return output</span></span>
+<span class="source-line"><span class="source-line-number">267</span><span class="source-line-text">      const s = yield* InstanceState.get(state)</span></span>
+<span class="source-line"><span class="source-line-number">268</span><span class="source-line-text">      for (const hook of s.hooks) {</span></span>
+<span class="source-line"><span class="source-line-number">269</span><span class="source-line-text">        const fn = hook[name] as any</span></span>
+<span class="source-line"><span class="source-line-number">270</span><span class="source-line-text">        if (!fn) continue</span></span>
+<span class="source-line"><span class="source-line-number">271</span><span class="source-line-text">        yield* Effect.promise(async () =&gt; fn(input, output))</span></span>
+<span class="source-line"><span class="source-line-number">272</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">273</span><span class="source-line-text">      return output</span></span>
+<span class="source-line"><span class="source-line-number">274</span><span class="source-line-text">    })</span></span></code></pre>
+</details>。
 
 ## 8. 关键 TypeScript 语法复习
 
@@ -531,7 +2007,16 @@ type TriggerName = {
 }[keyof Hooks]
 ```
 
-路径：`packages/opencode/src/plugin/index.ts:38-41`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:38-41</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">// Hook names that follow the (input, output) =&gt; Promise&lt;void&gt; trigger pattern</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">type TriggerName = {</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  [K in keyof Hooks]-?: NonNullable&lt;Hooks[K]&gt; extends (input: any, output: any) =&gt; Promise&lt;void&gt; ? K : never</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">}[keyof Hooks]</span></span></code></pre>
+</details>
 
 这段从 `Hooks` 中筛选出符合 `(input, output) => Promise<void>` 形状的 hook 名。Java 没有直接等价物，这是 TS 类型编程。
 
@@ -542,7 +2027,16 @@ Input = Parameters<Required<Hooks>[Name]>[0]
 Output = Parameters<Required<Hooks>[Name]>[1]
 ```
 
-路径：`packages/opencode/src/plugin/index.ts:45-48`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/plugin/index.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/plugin/index.ts:45-48</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">    Name extends TriggerName,</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">    Input = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[0],</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">    Output = Parameters&lt;Required&lt;Hooks&gt;[Name]&gt;[1],</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  &gt;(</span></span></code></pre>
+</details>
 
 从 hook 函数类型中抽取第 0、第 1 个参数类型。Java 泛型做不到这么直接。
 
@@ -555,7 +2049,70 @@ export namespace ServerConnection {
 }
 ```
 
-路径：`packages/app/src/context/server.tsx:63-120`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/app/src/context/server.tsx</span>
+    <span class="source-ref-path"><code>packages/app/src/context/server.tsx:63-120</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">63</span><span class="source-line-text">export namespace ServerConnection {</span></span>
+<span class="source-line"><span class="source-line-number">64</span><span class="source-line-text">  type Base = { displayName?: string }</span></span>
+<span class="source-line"><span class="source-line-number">65</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">66</span><span class="source-line-text">  export type HttpBase = {</span></span>
+<span class="source-line"><span class="source-line-number">67</span><span class="source-line-text">    url: string</span></span>
+<span class="source-line"><span class="source-line-number">68</span><span class="source-line-text">    username?: string</span></span>
+<span class="source-line"><span class="source-line-number">69</span><span class="source-line-text">    password?: string</span></span>
+<span class="source-line"><span class="source-line-number">70</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">71</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">72</span><span class="source-line-text">  // Regular web connections</span></span>
+<span class="source-line"><span class="source-line-number">73</span><span class="source-line-text">  export type Http = {</span></span>
+<span class="source-line"><span class="source-line-number">74</span><span class="source-line-text">    type: &quot;http&quot;</span></span>
+<span class="source-line"><span class="source-line-number">75</span><span class="source-line-text">    http: HttpBase</span></span>
+<span class="source-line"><span class="source-line-number">76</span><span class="source-line-text">    authToken?: boolean</span></span>
+<span class="source-line"><span class="source-line-number">77</span><span class="source-line-text">  } &amp; Base</span></span>
+<span class="source-line"><span class="source-line-number">78</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">79</span><span class="source-line-text">  export type Sidecar = {</span></span>
+<span class="source-line"><span class="source-line-number">80</span><span class="source-line-text">    type: &quot;sidecar&quot;</span></span>
+<span class="source-line"><span class="source-line-number">81</span><span class="source-line-text">    http: HttpBase</span></span>
+<span class="source-line"><span class="source-line-number">82</span><span class="source-line-text">  } &amp; (</span></span>
+<span class="source-line"><span class="source-line-number">83</span><span class="source-line-text">    | // Regular desktop server</span></span>
+<span class="source-line"><span class="source-line-number">84</span><span class="source-line-text">    { variant: &quot;base&quot; }</span></span>
+<span class="source-line"><span class="source-line-number">85</span><span class="source-line-text">    // WSL server (windows only)</span></span>
+<span class="source-line"><span class="source-line-number">86</span><span class="source-line-text">    | {</span></span>
+<span class="source-line"><span class="source-line-number">87</span><span class="source-line-text">        variant: &quot;wsl&quot;</span></span>
+<span class="source-line"><span class="source-line-number">88</span><span class="source-line-text">        distro: string</span></span>
+<span class="source-line"><span class="source-line-number">89</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">90</span><span class="source-line-text">  ) &amp;</span></span>
+<span class="source-line"><span class="source-line-number">91</span><span class="source-line-text">    Base</span></span>
+<span class="source-line"><span class="source-line-number">92</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">93</span><span class="source-line-text">  // Remote server desktop can SSH into</span></span>
+<span class="source-line"><span class="source-line-number">94</span><span class="source-line-text">  export type Ssh = {</span></span>
+<span class="source-line"><span class="source-line-number">95</span><span class="source-line-text">    type: &quot;ssh&quot;</span></span>
+<span class="source-line"><span class="source-line-number">96</span><span class="source-line-text">    host: string</span></span>
+<span class="source-line"><span class="source-line-number">97</span><span class="source-line-text">    // SSH client exposes an HTTP server for the app to use as a proxy</span></span>
+<span class="source-line"><span class="source-line-number">98</span><span class="source-line-text">    http: HttpBase</span></span>
+<span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">  } &amp; Base</span></span>
+<span class="source-line"><span class="source-line-number">100</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">101</span><span class="source-line-text">  export type Any =</span></span>
+<span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">    | Http</span></span>
+<span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">    // All these are desktop-only</span></span>
+<span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">    | (Sidecar | Ssh)</span></span>
+<span class="source-line"><span class="source-line-number">105</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">  export const key = (conn: Any): Key =&gt; {</span></span>
+<span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">    switch (conn.type) {</span></span>
+<span class="source-line"><span class="source-line-number">108</span><span class="source-line-text">      case &quot;http&quot;:</span></span>
+<span class="source-line"><span class="source-line-number">109</span><span class="source-line-text">        return Key.make(conn.http.url)</span></span>
+<span class="source-line"><span class="source-line-number">110</span><span class="source-line-text">      case &quot;sidecar&quot;: {</span></span>
+<span class="source-line"><span class="source-line-number">111</span><span class="source-line-text">        if (conn.variant === &quot;wsl&quot;) return Key.make(`wsl:${conn.distro}`)</span></span>
+<span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">        return Key.make(&quot;sidecar&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">      case &quot;ssh&quot;:</span></span>
+<span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">        return Key.make(`ssh:${conn.host}`)</span></span>
+<span class="source-line"><span class="source-line-number">116</span><span class="source-line-text">    }</span></span>
+<span class="source-line"><span class="source-line-number">117</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">118</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">119</span><span class="source-line-text">  export type Key = string &amp; { _brand: &quot;Key&quot; }</span></span>
+<span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">  export const Key = { make: (v: string) =&gt; v as Key }</span></span></code></pre>
+</details>
 
 TS namespace 可以把类型和函数放在同一命名空间下。现代项目更常用 module export，但这里用于组织相关类型/函数。
 
@@ -569,7 +2126,15 @@ TS namespace 可以把类型和函数放在同一命名空间下。现代项目�
 client: ReturnType<typeof createOpencodeClient>
 ```
 
-路径：`packages/plugin/src/index.ts:56-58`
+路径：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/plugin/src/index.ts</span>
+    <span class="source-ref-path"><code>packages/plugin/src/index.ts:56-58</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">export type PluginInput = {</span></span>
+<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text">  client: ReturnType&lt;typeof createOpencodeClient&gt;</span></span>
+<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">  project: Project</span></span></code></pre>
+</details>
 
 从函数返回值推导类型，避免重复定义 SDK client 类型。
 
@@ -589,11 +2154,293 @@ SSE 在 SDK 里通常被消费成 async iterable，UI 用 `for await`。Java 类
 
 ## 10. 它如何和 Tool、Provider、Session、文件系统协作
 
-- 和 Tool：ToolRegistry 会读取 plugin tools；插件 hook 可在 tool definition/execution 前后介入。来源：`packages/opencode/src/tool/registry.ts:219-224`、`packages/opencode/src/session/tools.ts:90-116`。
-- 和 Provider：LLM 层调用 `chat.params`、`chat.headers`、system transform 等 plugin hooks。来源：`packages/opencode/src/session/llm.ts:126-202`。
-- 和 Session：Session API 暴露 prompt/command/shell/revert/permissionRespond 等 endpoint。来源：`packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:312-405`。
-- 和文件系统：FileApi、WorkspaceRoutingQuery、directory header/query 让同一 server 能按工作区路由请求。来源：`packages/sdk/js/src/client.ts:17-31`。
-- 和 UI：Event API/SSE 是 UI 同步状态的基础。来源：`packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53`。
+- 和 Tool：ToolRegistry 会读取 plugin tools；插件 hook 可在 tool definition/execution 前后介入。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/tool/registry.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/tool/registry.ts:219-224</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">            custom.push(fromPlugin(id, def))</span></span>
+<span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">          }</span></span>
+<span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">        }</span></span>
+<span class="source-line"><span class="source-line-number">222</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">        yield* config.get()</span></span>
+<span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">        const questionEnabled = [&quot;app&quot;, &quot;cli&quot;, &quot;desktop&quot;].includes(flags.client) || flags.enableQuestionTool</span></span></code></pre>
+</details>、<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/session/tools.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/session/tools.ts:90-116</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">90</span><span class="source-line-text">              { tool: item.id, sessionID: ctx.sessionID, callID: ctx.callID },</span></span>
+<span class="source-line"><span class="source-line-number">91</span><span class="source-line-text">              { args },</span></span>
+<span class="source-line"><span class="source-line-number">92</span><span class="source-line-text">            )</span></span>
+<span class="source-line"><span class="source-line-number">93</span><span class="source-line-text">            const result = yield* item.execute(args, ctx)</span></span>
+<span class="source-line"><span class="source-line-number">94</span><span class="source-line-text">            const output = {</span></span>
+<span class="source-line"><span class="source-line-number">95</span><span class="source-line-text">              ...result,</span></span>
+<span class="source-line"><span class="source-line-number">96</span><span class="source-line-text">              attachments: result.attachments?.map((attachment) =&gt; ({</span></span>
+<span class="source-line"><span class="source-line-number">97</span><span class="source-line-text">                ...attachment,</span></span>
+<span class="source-line"><span class="source-line-number">98</span><span class="source-line-text">                id: PartID.ascending(),</span></span>
+<span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">                sessionID: ctx.sessionID,</span></span>
+<span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">                messageID: input.processor.message.id,</span></span>
+<span class="source-line"><span class="source-line-number">101</span><span class="source-line-text">              })),</span></span>
+<span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">            }</span></span>
+<span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">            yield* plugin.trigger(</span></span>
+<span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">              &quot;tool.execute.after&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">              { tool: item.id, sessionID: ctx.sessionID, callID: ctx.callID, args },</span></span>
+<span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">              output,</span></span>
+<span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">            )</span></span>
+<span class="source-line"><span class="source-line-number">108</span><span class="source-line-text">            if (options.abortSignal?.aborted) {</span></span>
+<span class="source-line"><span class="source-line-number">109</span><span class="source-line-text">              yield* input.processor.completeToolCall(options.toolCallId, output)</span></span>
+<span class="source-line"><span class="source-line-number">110</span><span class="source-line-text">            }</span></span>
+<span class="source-line"><span class="source-line-number">111</span><span class="source-line-text">            return output</span></span>
+<span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">        )</span></span>
+<span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">      },</span></span>
+<span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">    })</span></span>
+<span class="source-line"><span class="source-line-number">116</span><span class="source-line-text">  }</span></span></code></pre>
+</details>。
+- 和 Provider：LLM 层调用 `chat.params`、`chat.headers`、system transform 等 plugin hooks。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:126-202</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">      const header = system[0]</span></span>
+<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text">      yield* plugin.trigger(</span></span>
+<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">        &quot;experimental.chat.system.transform&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">        { sessionID: input.sessionID, model: input.model },</span></span>
+<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">        { system },</span></span>
+<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">      )</span></span>
+<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">      // rejoin to maintain 2-part structure for caching if header unchanged</span></span>
+<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">      if (system.length &gt; 2 &amp;&amp; system[0] === header) {</span></span>
+<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">        const rest = system.slice(1)</span></span>
+<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">        system.length = 0</span></span>
+<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">        system.push(header, rest.join(&quot;\n&quot;))</span></span>
+<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">      const variant =</span></span>
+<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">        !input.small &amp;&amp; input.model.variants &amp;&amp; input.user.model.variant</span></span>
+<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">          ? input.model.variants[input.user.model.variant]</span></span>
+<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">          : {}</span></span>
+<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">      const base = input.small</span></span>
+<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">        ? ProviderTransform.smallOptions(input.model)</span></span>
+<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">        : ProviderTransform.options({</span></span>
+<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">            model: input.model,</span></span>
+<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">            sessionID: input.sessionID,</span></span>
+<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">            providerOptions: item.options,</span></span>
+<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">          })</span></span>
+<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">      const options = mergeOptions(mergeOptions(mergeOptions(base, input.model.options), input.agent.options), variant)</span></span>
+<span class="source-line"><span class="source-line-number">151</span><span class="source-line-text">      if (isOpenaiOauth) {</span></span>
+<span class="source-line"><span class="source-line-number">152</span><span class="source-line-text">        options.instructions = system.join(&quot;\n&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">153</span><span class="source-line-text">      }</span></span>
+<span class="source-line"><span class="source-line-number">154</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">155</span><span class="source-line-text">      const isWorkflow = language instanceof GitLabWorkflowLanguageModel</span></span>
+<span class="source-line"><span class="source-line-number">156</span><span class="source-line-text">      const messages = isOpenaiOauth</span></span>
+<span class="source-line"><span class="source-line-number">157</span><span class="source-line-text">        ? input.messages</span></span>
+<span class="source-line"><span class="source-line-number">158</span><span class="source-line-text">        : isWorkflow</span></span>
+<span class="source-line"><span class="source-line-number">159</span><span class="source-line-text">          ? input.messages</span></span>
+<span class="source-line"><span class="source-line-number">160</span><span class="source-line-text">          : [</span></span>
+<span class="source-line"><span class="source-line-number">161</span><span class="source-line-text">              ...system.map(</span></span>
+<span class="source-line"><span class="source-line-number">162</span><span class="source-line-text">                (x): ModelMessage =&gt; ({</span></span>
+<span class="source-line"><span class="source-line-number">163</span><span class="source-line-text">                  role: &quot;system&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">164</span><span class="source-line-text">                  content: x,</span></span>
+<span class="source-line"><span class="source-line-number">165</span><span class="source-line-text">                }),</span></span>
+<span class="source-line"><span class="source-line-number">166</span><span class="source-line-text">              ),</span></span>
+<span class="source-line"><span class="source-line-number">167</span><span class="source-line-text">              ...input.messages,</span></span>
+<span class="source-line"><span class="source-line-number">168</span><span class="source-line-text">            ]</span></span>
+<span class="source-line"><span class="source-line-number">169</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">170</span><span class="source-line-text">      const params = yield* plugin.trigger(</span></span>
+<span class="source-line"><span class="source-line-number">171</span><span class="source-line-text">        &quot;chat.params&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">172</span><span class="source-line-text">        {</span></span>
+<span class="source-line"><span class="source-line-number">173</span><span class="source-line-text">          sessionID: input.sessionID,</span></span>
+<span class="source-line"><span class="source-line-number">174</span><span class="source-line-text">          agent: input.agent.name,</span></span>
+<span class="source-line"><span class="source-line-number">175</span><span class="source-line-text">          model: input.model,</span></span>
+<span class="source-line"><span class="source-line-number">176</span><span class="source-line-text">          provider: item,</span></span>
+<span class="source-line"><span class="source-line-number">177</span><span class="source-line-text">          message: input.user,</span></span>
+<span class="source-line"><span class="source-line-number">178</span><span class="source-line-text">        },</span></span>
+<span class="source-line"><span class="source-line-number">179</span><span class="source-line-text">        {</span></span>
+<span class="source-line"><span class="source-line-number">180</span><span class="source-line-text">          temperature: input.model.capabilities.temperature</span></span>
+<span class="source-line"><span class="source-line-number">181</span><span class="source-line-text">            ? (input.agent.temperature ?? ProviderTransform.temperature(input.model))</span></span>
+<span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">            : undefined,</span></span>
+<span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">          topP: input.agent.topP ?? ProviderTransform.topP(input.model),</span></span>
+<span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">          topK: ProviderTransform.topK(input.model),</span></span>
+<span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">          maxOutputTokens: ProviderTransform.maxOutputTokens(input.model, flags.outputTokenMax),</span></span>
+<span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">          options,</span></span>
+<span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">        },</span></span>
+<span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      )</span></span>
+<span class="source-line"><span class="source-line-number">189</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">190</span><span class="source-line-text">      const { headers } = yield* plugin.trigger(</span></span>
+<span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">        &quot;chat.headers&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">        {</span></span>
+<span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">          sessionID: input.sessionID,</span></span>
+<span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">          agent: input.agent.name,</span></span>
+<span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">          model: input.model,</span></span>
+<span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">          provider: item,</span></span>
+<span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">          message: input.user,</span></span>
+<span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">        },</span></span>
+<span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">        {</span></span>
+<span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">          headers: {},</span></span>
+<span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">        },</span></span>
+<span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">      )</span></span></code></pre>
+</details>。
+- 和 Session：Session API 暴露 prompt/command/shell/revert/permissionRespond 等 endpoint。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/groups/session.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/groups/session.ts:312-405</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">312</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;prompt&quot;, SessionPaths.prompt, {</span></span>
+<span class="source-line"><span class="source-line-number">313</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">314</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">315</span><span class="source-line-text">          payload: PromptPayload,</span></span>
+<span class="source-line"><span class="source-line-number">316</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">317</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">318</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">319</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">320</span><span class="source-line-text">            identifier: &quot;session.prompt&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">321</span><span class="source-line-text">            summary: &quot;Send message&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">322</span><span class="source-line-text">            description: &quot;Create and send a new message to a session, streaming the AI response.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">323</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">324</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">325</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;promptAsync&quot;, SessionPaths.promptAsync, {</span></span>
+<span class="source-line"><span class="source-line-number">326</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">327</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">328</span><span class="source-line-text">          payload: PromptPayload,</span></span>
+<span class="source-line"><span class="source-line-number">329</span><span class="source-line-text">          success: described(HttpApiSchema.NoContent, &quot;Prompt accepted&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">330</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">331</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">332</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">333</span><span class="source-line-text">            identifier: &quot;session.prompt_async&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">334</span><span class="source-line-text">            summary: &quot;Send async message&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">335</span><span class="source-line-text">            description:</span></span>
+<span class="source-line"><span class="source-line-number">336</span><span class="source-line-text">              &quot;Create and send a new message to a session asynchronously, starting the session if needed and returning immediately.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">337</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">338</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">339</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;command&quot;, SessionPaths.command, {</span></span>
+<span class="source-line"><span class="source-line-number">340</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">341</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">342</span><span class="source-line-text">          payload: CommandPayload,</span></span>
+<span class="source-line"><span class="source-line-number">343</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">344</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">345</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">346</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">347</span><span class="source-line-text">            identifier: &quot;session.command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">348</span><span class="source-line-text">            summary: &quot;Send command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">349</span><span class="source-line-text">            description: &quot;Send a new command to a session for execution by the AI assistant.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">350</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">351</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">352</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;shell&quot;, SessionPaths.shell, {</span></span>
+<span class="source-line"><span class="source-line-number">353</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">354</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">355</span><span class="source-line-text">          payload: ShellPayload,</span></span>
+<span class="source-line"><span class="source-line-number">356</span><span class="source-line-text">          success: described(MessageV2.WithParts, &quot;Created message&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">357</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">358</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">359</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">360</span><span class="source-line-text">            identifier: &quot;session.shell&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">361</span><span class="source-line-text">            summary: &quot;Run shell command&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">362</span><span class="source-line-text">            description: &quot;Execute a shell command within the session context and return the AI's response.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">363</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">364</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">365</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;revert&quot;, SessionPaths.revert, {</span></span>
+<span class="source-line"><span class="source-line-number">366</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">367</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">368</span><span class="source-line-text">          payload: RevertPayload,</span></span>
+<span class="source-line"><span class="source-line-number">369</span><span class="source-line-text">          success: described(Session.Info, &quot;Updated session&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">370</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">371</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">372</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">373</span><span class="source-line-text">            identifier: &quot;session.revert&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">374</span><span class="source-line-text">            summary: &quot;Revert message&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">375</span><span class="source-line-text">            description:</span></span>
+<span class="source-line"><span class="source-line-number">376</span><span class="source-line-text">              &quot;Revert a specific message in a session, undoing its effects and restoring the previous state.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">377</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">378</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">379</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;unrevert&quot;, SessionPaths.unrevert, {</span></span>
+<span class="source-line"><span class="source-line-number">380</span><span class="source-line-text">          params: { sessionID: SessionID },</span></span>
+<span class="source-line"><span class="source-line-number">381</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">382</span><span class="source-line-text">          success: described(Session.Info, &quot;Updated session&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">383</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">384</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">385</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">386</span><span class="source-line-text">            identifier: &quot;session.unrevert&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">387</span><span class="source-line-text">            summary: &quot;Restore reverted messages&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">388</span><span class="source-line-text">            description: &quot;Restore all previously reverted messages in a session.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">389</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">390</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">391</span><span class="source-line-text">        HttpApiEndpoint.post(&quot;permissionRespond&quot;, SessionPaths.permissions, {</span></span>
+<span class="source-line"><span class="source-line-number">392</span><span class="source-line-text">          params: { sessionID: SessionID, permissionID: PermissionID },</span></span>
+<span class="source-line"><span class="source-line-number">393</span><span class="source-line-text">          query: WorkspaceRoutingQuery,</span></span>
+<span class="source-line"><span class="source-line-number">394</span><span class="source-line-text">          payload: PermissionResponsePayload,</span></span>
+<span class="source-line"><span class="source-line-number">395</span><span class="source-line-text">          success: described(Schema.Boolean, &quot;Permission processed successfully&quot;),</span></span>
+<span class="source-line"><span class="source-line-number">396</span><span class="source-line-text">          error: [HttpApiError.BadRequest, ApiNotFoundError],</span></span>
+<span class="source-line"><span class="source-line-number">397</span><span class="source-line-text">        }).annotateMerge(</span></span>
+<span class="source-line"><span class="source-line-number">398</span><span class="source-line-text">          OpenApi.annotations({</span></span>
+<span class="source-line"><span class="source-line-number">399</span><span class="source-line-text">            identifier: &quot;permission.respond&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">400</span><span class="source-line-text">            summary: &quot;Respond to permission&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">401</span><span class="source-line-text">            description: &quot;Approve or deny a permission request from the AI assistant.&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">402</span><span class="source-line-text">            deprecated: true,</span></span>
+<span class="source-line"><span class="source-line-number">403</span><span class="source-line-text">          }),</span></span>
+<span class="source-line"><span class="source-line-number">404</span><span class="source-line-text">        ),</span></span>
+<span class="source-line"><span class="source-line-number">405</span><span class="source-line-text">        HttpApiEndpoint.delete(&quot;deleteMessage&quot;, SessionPaths.deleteMessage, {</span></span></code></pre>
+</details>。
+- 和文件系统：FileApi、WorkspaceRoutingQuery、directory header/query 让同一 server 能按工作区路由请求。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/sdk/js/src/client.ts</span>
+    <span class="source-ref-path"><code>packages/sdk/js/src/client.ts:17-31</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">17</span><span class="source-line-text">function rewrite(request: Request, directory?: string) {</span></span>
+<span class="source-line"><span class="source-line-number">18</span><span class="source-line-text">  if (request.method !== &quot;GET&quot; &amp;&amp; request.method !== &quot;HEAD&quot;) return request</span></span>
+<span class="source-line"><span class="source-line-number">19</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">20</span><span class="source-line-text">  const value = pick(request.headers.get(&quot;x-opencode-directory&quot;), directory)</span></span>
+<span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">  if (!value) return request</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">  const url = new URL(request.url)</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">  if (!url.searchParams.has(&quot;directory&quot;)) {</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">    url.searchParams.set(&quot;directory&quot;, value)</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">  }</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">  const next = new Request(url, request)</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">  next.headers.delete(&quot;x-opencode-directory&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">  return next</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">}</span></span></code></pre>
+</details>。
+- 和 UI：Event API/SSE 是 UI 同步状态的基础。来源：<details class="source-ref source-ref--inline">
+  <summary>
+    <span class="source-ref-title">packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts</span>
+    <span class="source-ref-path"><code>packages/opencode/src/server/routes/instance/httpapi/handlers/event.ts:21-53</code></span>
+  </summary>
+  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">21</span><span class="source-line-text">function eventResponse(bus: Bus.Interface) {</span></span>
+<span class="source-line"><span class="source-line-number">22</span><span class="source-line-text">  return Effect.gen(function* () {</span></span>
+<span class="source-line"><span class="source-line-number">23</span><span class="source-line-text">    // Subscribe eagerly: the bus subscription is acquired in the request scope</span></span>
+<span class="source-line"><span class="source-line-number">24</span><span class="source-line-text">    // at this yield, so any publish from now on is queued for the body-pump</span></span>
+<span class="source-line"><span class="source-line-number">25</span><span class="source-line-text">    // fiber to drain — closing the race where Stream.concat(server.connected,</span></span>
+<span class="source-line"><span class="source-line-number">26</span><span class="source-line-text">    // lazy-subscribe) used to drop publishes in the prefix-consume window.</span></span>
+<span class="source-line"><span class="source-line-number">27</span><span class="source-line-text">    const events = (yield* bus.subscribeAll()).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">28</span><span class="source-line-text">      Stream.takeUntil((event) =&gt; event.type === Bus.InstanceDisposed.type),</span></span>
+<span class="source-line"><span class="source-line-number">29</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">30</span><span class="source-line-text">    const heartbeat = Stream.tick(&quot;10 seconds&quot;).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">31</span><span class="source-line-text">      Stream.drop(1),</span></span>
+<span class="source-line"><span class="source-line-number">32</span><span class="source-line-text">      Stream.map(() =&gt; ({ id: Bus.createID(), type: &quot;server.heartbeat&quot;, properties: {} })),</span></span>
+<span class="source-line"><span class="source-line-number">33</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">34</span><span class="source-line-text"></span></span>
+<span class="source-line"><span class="source-line-number">35</span><span class="source-line-text">    log.info(&quot;event connected&quot;)</span></span>
+<span class="source-line"><span class="source-line-number">36</span><span class="source-line-text">    return HttpServerResponse.stream(</span></span>
+<span class="source-line"><span class="source-line-number">37</span><span class="source-line-text">      Stream.make({ id: Bus.createID(), type: &quot;server.connected&quot;, properties: {} }).pipe(</span></span>
+<span class="source-line"><span class="source-line-number">38</span><span class="source-line-text">        Stream.concat(events.pipe(Stream.merge(heartbeat, { haltStrategy: &quot;left&quot; }))),</span></span>
+<span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">        Stream.map(eventData),</span></span>
+<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">        Stream.pipeThroughChannel(Sse.encode()),</span></span>
+<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">        Stream.encodeText,</span></span>
+<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">        Stream.ensuring(Effect.sync(() =&gt; log.info(&quot;event disconnected&quot;))),</span></span>
+<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">      ),</span></span>
+<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">      {</span></span>
+<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">        contentType: &quot;text/event-stream&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">        headers: {</span></span>
+<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">          &quot;Cache-Control&quot;: &quot;no-cache, no-transform&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">          &quot;X-Accel-Buffering&quot;: &quot;no&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">          &quot;X-Content-Type-Options&quot;: &quot;nosniff&quot;,</span></span>
+<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">        },</span></span>
+<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">      },</span></span>
+<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">    )</span></span>
+<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text">  })</span></span></code></pre>
+</details>。
 
 ## 11. 如果自己实现 mini agent，这一章对应什么代码
 

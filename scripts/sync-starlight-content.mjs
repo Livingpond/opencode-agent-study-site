@@ -11,6 +11,7 @@ const sourceRoot = process.env.OPENCODE_SOURCE_ROOT
 
 const chapters = JSON.parse(await readFile(path.join(root, 'data/chapters.json'), 'utf8'));
 const progress = JSON.parse(await readFile(path.join(root, 'data/progress.json'), 'utf8'));
+const sourceFileCache = new Map();
 
 function quote(value) {
   return JSON.stringify(String(value));
@@ -50,30 +51,57 @@ function parseLineRange(value) {
   return { start, end };
 }
 
-async function renderSourceRef(attrs) {
-  if (!attrs.path) throw new Error('source-ref is missing path="..."');
-  if (!attrs.lines) throw new Error(`source-ref for ${attrs.path} is missing lines="..."`);
+function parseSourceLabel(value) {
+  const match = String(value).match(/^([^`\n]+?):(\d+(?:-\d+)?)$/);
+  if (!match) return;
+  const sourcePath = match[1].trim();
+  if (sourcePath.startsWith('http://') || sourcePath.startsWith('https://')) return;
+  if (sourcePath.includes(' ')) return;
+  const fullPathPrefixes = ['packages/', 'sdks/', 'github/', 'script/', 'infra/', 'nix/'];
+  const rootFiles = ['AGENTS.md', 'package.json', 'bunfig.toml', 'sst.config.ts', 'turbo.json'];
+  if (!fullPathPrefixes.some((prefix) => sourcePath.startsWith(prefix)) && !rootFiles.includes(sourcePath)) return;
+  return {
+    path: sourcePath,
+    lines: match[2],
+  };
+}
 
-  const { start, end } = parseLineRange(attrs.lines);
-  const filePath = path.join(sourceRoot, attrs.path);
-  const content = await readFile(filePath, 'utf8');
-  const lines = content.split(/\r?\n/);
+async function readSourceLines(sourcePath) {
+  if (!sourceFileCache.has(sourcePath)) {
+    const filePath = path.join(sourceRoot, sourcePath);
+    const content = await readFile(filePath, 'utf8');
+    sourceFileCache.set(sourcePath, content.split(/\r?\n/));
+  }
+  return sourceFileCache.get(sourcePath);
+}
+
+async function sourceCodeHtml(sourcePath, sourceLines) {
+  const { start, end } = parseLineRange(sourceLines);
+  const lines = await readSourceLines(sourcePath);
   if (end > lines.length) {
-    throw new Error(`source-ref ${attrs.path}:${attrs.lines} exceeds file length ${lines.length}`);
+    throw new Error(`source-ref ${sourcePath}:${sourceLines} exceeds file length ${lines.length}`);
   }
 
-  const title = attrs.title || attrs.path;
-  const label = `${attrs.path}:${attrs.lines}`;
-  const note = attrs.note ? `<p class="source-ref-note">${escapeHtml(attrs.note)}</p>\n` : '';
-  const code = lines
+  return lines
     .slice(start - 1, end)
     .map((line, index) => {
       const number = start + index;
       return `<span class="source-line"><span class="source-line-number">${number}</span><span class="source-line-text">${escapeHtml(line)}</span></span>`;
     })
     .join('\n');
+}
 
-  return `<details class="source-ref">
+async function renderSourceRef(attrs, variant = 'card') {
+  if (!attrs.path) throw new Error('source-ref is missing path="..."');
+  if (!attrs.lines) throw new Error(`source-ref for ${attrs.path} is missing lines="..."`);
+
+  const title = attrs.title || attrs.path;
+  const label = `${attrs.path}:${attrs.lines}`;
+  const note = attrs.note ? `<p class="source-ref-note">${escapeHtml(attrs.note)}</p>\n` : '';
+  const code = await sourceCodeHtml(attrs.path, attrs.lines);
+  const classes = variant === 'inline' ? 'source-ref source-ref--inline' : 'source-ref';
+
+  return `<details class="${classes}">
   <summary>
     <span class="source-ref-title">${escapeHtml(title)}</span>
     <span class="source-ref-path"><code>${escapeHtml(label)}</code></span>
@@ -93,6 +121,61 @@ async function expandSourceRefs(markdown) {
   }
   result += markdown.slice(lastIndex);
   return result;
+}
+
+async function expandInlineSourceRefs(markdown) {
+  const warnings = [];
+  const lines = markdown.split('\n');
+  let inFence = false;
+  const expanded = [];
+
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      expanded.push(line);
+      continue;
+    }
+
+    if (inFence || line.includes('<!-- source-ref')) {
+      expanded.push(line);
+      continue;
+    }
+
+    let next = '';
+    let lastIndex = 0;
+    for (const match of line.matchAll(/`([^`\n]+?)`/g)) {
+      const ref = parseSourceLabel(match[1]);
+      if (!ref) continue;
+
+      next += line.slice(lastIndex, match.index);
+      try {
+        next += await renderSourceRef(ref, 'inline');
+      } catch (error) {
+        warnings.push(`${ref.path}:${ref.lines} (${error.message})`);
+        next += match[0];
+      }
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex === 0) {
+      expanded.push(line);
+    } else {
+      expanded.push(next + line.slice(lastIndex));
+    }
+  }
+
+  if (warnings.length) {
+    console.warn(`Skipped ${warnings.length} inline source refs that could not be expanded:`);
+    for (const warning of warnings.slice(0, 20)) console.warn(`- ${warning}`);
+    if (warnings.length > 20) console.warn(`- ... ${warnings.length - 20} more`);
+  }
+
+  return expanded.join('\n');
+}
+
+async function expandSourceEvidence(markdown) {
+  const withCards = await expandSourceRefs(markdown);
+  return expandInlineSourceRefs(withCards);
 }
 
 function oldHtmlRedirects() {
@@ -225,7 +308,7 @@ async function writeChapterPages() {
     if (chapter.status === 'complete') {
       const markdownPath = path.join(root, chapter.markdown);
       const markdown = await readFile(markdownPath, 'utf8');
-      const expandedMarkdown = await expandSourceRefs(stripFirstHeading(markdown));
+      const expandedMarkdown = await expandSourceEvidence(stripFirstHeading(markdown));
       body = `${chapterMeta(chapter)}\n\n${expandedMarkdown}\n`;
     } else {
       body = `${pendingBody(chapter)}\n`;
