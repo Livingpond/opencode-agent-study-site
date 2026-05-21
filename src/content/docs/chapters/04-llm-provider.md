@@ -52,7 +52,9 @@ sidebar:
 
 ## 1. 一句话讲明白
 
-模型 Provider / LLM 调用层是 OpenCode 的“网关适配层”：上游接收 agent loop 准备好的消息、工具、模型和权限；中间按 provider/model 合并 system prompt、参数、headers 和 schema；下游调用 AI SDK 或 native runtime 的流式接口；最后把 provider 的事件转成 OpenCode 统一的 `LLMEvent`，交给 processor 写回 session。来源：<details class="source-ref source-ref--inline">
+模型 Provider / LLM 调用层是 OpenCode 的“网关适配层”：上游接收 agent loop 准备好的消息、工具、模型和权限；中间按 provider/model 合并 system prompt、参数、headers 和 schema；下游调用 AI SDK 或 native runtime 的流式接口；最后把 provider 的事件转成 OpenCode 统一的 `LLMEvent`，交给 processor 写回 session。来源：`packages/opencode/src/session/llm.ts:39-60`、`packages/opencode/src/session/llm.ts:99-188`、`packages/opencode/src/session/llm.ts:402-493`、`packages/opencode/src/session/llm/ai-sdk.ts:61-236`。
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:39-60</code></span>
@@ -79,7 +81,9 @@ sidebar:
 <span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">export interface Interface {</span></span>
 <span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  readonly stream: (input: StreamInput) =&gt; Stream.Stream&lt;LLMEvent, unknown&gt;</span></span>
 <span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">}</span></span></code></pre>
-</details>、<details class="source-ref source-ref--inline">
+</details>
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:99-188</code></span>
@@ -174,7 +178,9 @@ sidebar:
 <span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">          options,</span></span>
 <span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">        },</span></span>
 <span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      )</span></span></code></pre>
-</details>、<details class="source-ref source-ref--inline">
+</details>
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:402-493</code></span>
@@ -271,7 +277,9 @@ sidebar:
 <span class="source-line"><span class="source-line-number">491</span><span class="source-line-text">          }),</span></span>
 <span class="source-line"><span class="source-line-number">492</span><span class="source-line-text">        ),</span></span>
 <span class="source-line"><span class="source-line-number">493</span><span class="source-line-text">      )</span></span></code></pre>
-</details>、<details class="source-ref source-ref--inline">
+</details>
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm/ai-sdk.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm/ai-sdk.ts:61-236</code></span>
@@ -452,7 +460,8 @@ sidebar:
 <span class="source-line"><span class="source-line-number">234</span><span class="source-line-text"></span></span>
 <span class="source-line"><span class="source-line-number">235</span><span class="source-line-text">    case &quot;error&quot;:</span></span>
 <span class="source-line"><span class="source-line-number">236</span><span class="source-line-text">      return Effect.fail(event.error)</span></span></code></pre>
-</details>。
+</details>
+
 
 ## 2. 它在 OpenCode agent 中的位置
 
@@ -475,96 +484,105 @@ runLoop
 
 关键判断：
 
-- `LLM.StreamInput` 明确了 agent loop 传入 LLM 层的数据合同。来源：<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:39-52</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">export type StreamInput = {</span></span>
-<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  user: MessageV2.User</span></span>
-<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">  sessionID: string</span></span>
-<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">  parentSessionID?: string</span></span>
-<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">  model: Provider.Model</span></span>
-<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  agent: Agent.Info</span></span>
-<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">  permission?: Permission.Ruleset</span></span>
-<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  system: string[]</span></span>
-<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">  messages: ModelMessage[]</span></span>
-<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  small?: boolean</span></span>
-<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  tools: Record&lt;string, Tool&gt;</span></span>
-<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">  retries?: number</span></span>
-<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  toolChoice?: &quot;auto&quot; | &quot;required&quot; | &quot;none&quot;</span></span>
-<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">}</span></span></code></pre>
-</details>。
-- `Provider.Interface` 暴露 `getProvider`、`getModel`、`getLanguage`，说明 provider 层负责模型解析和 SDK language model 获取。来源：<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:989-1000</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">989</span><span class="source-line-text">export interface Interface {</span></span>
-<span class="source-line"><span class="source-line-number">990</span><span class="source-line-text">  readonly list: () =&gt; Effect.Effect&lt;Record&lt;ProviderID, Info&gt;&gt;</span></span>
-<span class="source-line"><span class="source-line-number">991</span><span class="source-line-text">  readonly getProvider: (providerID: ProviderID) =&gt; Effect.Effect&lt;Info&gt;</span></span>
-<span class="source-line"><span class="source-line-number">992</span><span class="source-line-text">  readonly getModel: (providerID: ProviderID, modelID: ModelID) =&gt; Effect.Effect&lt;Model, ModelNotFoundError&gt;</span></span>
-<span class="source-line"><span class="source-line-number">993</span><span class="source-line-text">  readonly getLanguage: (model: Model) =&gt; Effect.Effect&lt;LanguageModelV3, ModelNotFoundError&gt;</span></span>
-<span class="source-line"><span class="source-line-number">994</span><span class="source-line-text">  readonly closest: (</span></span>
-<span class="source-line"><span class="source-line-number">995</span><span class="source-line-text">    providerID: ProviderID,</span></span>
-<span class="source-line"><span class="source-line-number">996</span><span class="source-line-text">    query: string[],</span></span>
-<span class="source-line"><span class="source-line-number">997</span><span class="source-line-text">  ) =&gt; Effect.Effect&lt;{ providerID: ProviderID; modelID: string } | undefined&gt;</span></span>
-<span class="source-line"><span class="source-line-number">998</span><span class="source-line-text">  readonly getSmallModel: (providerID: ProviderID) =&gt; Effect.Effect&lt;Model | undefined&gt;</span></span>
-<span class="source-line"><span class="source-line-number">999</span><span class="source-line-text">  readonly defaultModel: () =&gt; Effect.Effect&lt;{ providerID: ProviderID; modelID: ModelID }&gt;</span></span>
-<span class="source-line"><span class="source-line-number">1000</span><span class="source-line-text">}</span></span></code></pre>
-</details>。
-- `ProviderTransform.message` 说明 OpenCode 不把内部消息直接丢给所有 provider，而是按 provider 能力做转换。来源：<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/provider/transform.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/provider/transform.ts:429-474</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">429</span><span class="source-line-text">export function message(msgs: ModelMessage[], model: Provider.Model, options: Record&lt;string, unknown&gt;) {</span></span>
-<span class="source-line"><span class="source-line-number">430</span><span class="source-line-text">  msgs = unsupportedParts(msgs, model)</span></span>
-<span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">  msgs = normalizeMessages(msgs, model, options)</span></span>
-<span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">  if (</span></span>
-<span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">    (model.providerID === &quot;anthropic&quot; ||</span></span>
-<span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">      model.providerID === &quot;google-vertex-anthropic&quot; ||</span></span>
-<span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">      model.api.id.includes(&quot;anthropic&quot;) ||</span></span>
-<span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">      model.api.id.includes(&quot;claude&quot;) ||</span></span>
-<span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">      model.id.includes(&quot;anthropic&quot;) ||</span></span>
-<span class="source-line"><span class="source-line-number">438</span><span class="source-line-text">      model.id.includes(&quot;claude&quot;) ||</span></span>
-<span class="source-line"><span class="source-line-number">439</span><span class="source-line-text">      model.api.npm === &quot;@ai-sdk/anthropic&quot; ||</span></span>
-<span class="source-line"><span class="source-line-number">440</span><span class="source-line-text">      model.api.npm === &quot;@ai-sdk/alibaba&quot;) &amp;&amp;</span></span>
-<span class="source-line"><span class="source-line-number">441</span><span class="source-line-text">    model.api.npm !== &quot;@ai-sdk/gateway&quot;</span></span>
-<span class="source-line"><span class="source-line-number">442</span><span class="source-line-text">  ) {</span></span>
-<span class="source-line"><span class="source-line-number">443</span><span class="source-line-text">    msgs = applyCaching(msgs, model)</span></span>
-<span class="source-line"><span class="source-line-number">444</span><span class="source-line-text">  }</span></span>
-<span class="source-line"><span class="source-line-number">445</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">446</span><span class="source-line-text">  // Remap providerOptions keys from stored providerID to expected SDK key</span></span>
-<span class="source-line"><span class="source-line-number">447</span><span class="source-line-text">  const key = sdkKey(model.api.npm)</span></span>
-<span class="source-line"><span class="source-line-number">448</span><span class="source-line-text">  if (key &amp;&amp; key !== model.providerID) {</span></span>
-<span class="source-line"><span class="source-line-number">449</span><span class="source-line-text">    const remap = (opts: Record&lt;string, any&gt; | undefined) =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">450</span><span class="source-line-text">      if (!opts) return opts</span></span>
-<span class="source-line"><span class="source-line-number">451</span><span class="source-line-text">      if (!(model.providerID in opts)) return opts</span></span>
-<span class="source-line"><span class="source-line-number">452</span><span class="source-line-text">      const result = { ...opts }</span></span>
-<span class="source-line"><span class="source-line-number">453</span><span class="source-line-text">      result[key] = result[model.providerID]</span></span>
-<span class="source-line"><span class="source-line-number">454</span><span class="source-line-text">      delete result[model.providerID]</span></span>
-<span class="source-line"><span class="source-line-number">455</span><span class="source-line-text">      return result</span></span>
-<span class="source-line"><span class="source-line-number">456</span><span class="source-line-text">    }</span></span>
-<span class="source-line"><span class="source-line-number">457</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">458</span><span class="source-line-text">    msgs = msgs.map((msg) =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">459</span><span class="source-line-text">      if (!Array.isArray(msg.content)) return { ...msg, providerOptions: remap(msg.providerOptions) }</span></span>
-<span class="source-line"><span class="source-line-number">460</span><span class="source-line-text">      return {</span></span>
-<span class="source-line"><span class="source-line-number">461</span><span class="source-line-text">        ...msg,</span></span>
-<span class="source-line"><span class="source-line-number">462</span><span class="source-line-text">        providerOptions: remap(msg.providerOptions),</span></span>
-<span class="source-line"><span class="source-line-number">463</span><span class="source-line-text">        content: msg.content.map((part) =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">464</span><span class="source-line-text">          if (part.type === &quot;tool-approval-request&quot; || part.type === &quot;tool-approval-response&quot;) {</span></span>
-<span class="source-line"><span class="source-line-number">465</span><span class="source-line-text">            return { ...part }</span></span>
-<span class="source-line"><span class="source-line-number">466</span><span class="source-line-text">          }</span></span>
-<span class="source-line"><span class="source-line-number">467</span><span class="source-line-text">          return { ...part, providerOptions: remap(part.providerOptions) }</span></span>
-<span class="source-line"><span class="source-line-number">468</span><span class="source-line-text">        }),</span></span>
-<span class="source-line"><span class="source-line-number">469</span><span class="source-line-text">      } as typeof msg</span></span>
-<span class="source-line"><span class="source-line-number">470</span><span class="source-line-text">    })</span></span>
-<span class="source-line"><span class="source-line-number">471</span><span class="source-line-text">  }</span></span>
-<span class="source-line"><span class="source-line-number">472</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">473</span><span class="source-line-text">  return msgs</span></span>
-<span class="source-line"><span class="source-line-number">474</span><span class="source-line-text">}</span></span></code></pre>
-</details>。
+- `LLM.StreamInput` 明确了 agent loop 传入 LLM 层的数据合同。来源：`packages/opencode/src/session/llm.ts:39-52`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:39-52</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">export type StreamInput = {</span></span>
+  <span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  user: MessageV2.User</span></span>
+  <span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">  sessionID: string</span></span>
+  <span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">  parentSessionID?: string</span></span>
+  <span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">  model: Provider.Model</span></span>
+  <span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  agent: Agent.Info</span></span>
+  <span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">  permission?: Permission.Ruleset</span></span>
+  <span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  system: string[]</span></span>
+  <span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">  messages: ModelMessage[]</span></span>
+  <span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  small?: boolean</span></span>
+  <span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  tools: Record&lt;string, Tool&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">  retries?: number</span></span>
+  <span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  toolChoice?: &quot;auto&quot; | &quot;required&quot; | &quot;none&quot;</span></span>
+  <span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">}</span></span></code></pre>
+  </details>
+
+- `Provider.Interface` 暴露 `getProvider`、`getModel`、`getLanguage`，说明 provider 层负责模型解析和 SDK language model 获取。来源：`packages/opencode/src/provider/provider.ts:989-1000`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:989-1000</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">989</span><span class="source-line-text">export interface Interface {</span></span>
+  <span class="source-line"><span class="source-line-number">990</span><span class="source-line-text">  readonly list: () =&gt; Effect.Effect&lt;Record&lt;ProviderID, Info&gt;&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">991</span><span class="source-line-text">  readonly getProvider: (providerID: ProviderID) =&gt; Effect.Effect&lt;Info&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">992</span><span class="source-line-text">  readonly getModel: (providerID: ProviderID, modelID: ModelID) =&gt; Effect.Effect&lt;Model, ModelNotFoundError&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">993</span><span class="source-line-text">  readonly getLanguage: (model: Model) =&gt; Effect.Effect&lt;LanguageModelV3, ModelNotFoundError&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">994</span><span class="source-line-text">  readonly closest: (</span></span>
+  <span class="source-line"><span class="source-line-number">995</span><span class="source-line-text">    providerID: ProviderID,</span></span>
+  <span class="source-line"><span class="source-line-number">996</span><span class="source-line-text">    query: string[],</span></span>
+  <span class="source-line"><span class="source-line-number">997</span><span class="source-line-text">  ) =&gt; Effect.Effect&lt;{ providerID: ProviderID; modelID: string } | undefined&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">998</span><span class="source-line-text">  readonly getSmallModel: (providerID: ProviderID) =&gt; Effect.Effect&lt;Model | undefined&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">999</span><span class="source-line-text">  readonly defaultModel: () =&gt; Effect.Effect&lt;{ providerID: ProviderID; modelID: ModelID }&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">1000</span><span class="source-line-text">}</span></span></code></pre>
+  </details>
+
+- `ProviderTransform.message` 说明 OpenCode 不把内部消息直接丢给所有 provider，而是按 provider 能力做转换。来源：`packages/opencode/src/provider/transform.ts:429-474`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/provider/transform.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/provider/transform.ts:429-474</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">429</span><span class="source-line-text">export function message(msgs: ModelMessage[], model: Provider.Model, options: Record&lt;string, unknown&gt;) {</span></span>
+  <span class="source-line"><span class="source-line-number">430</span><span class="source-line-text">  msgs = unsupportedParts(msgs, model)</span></span>
+  <span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">  msgs = normalizeMessages(msgs, model, options)</span></span>
+  <span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">  if (</span></span>
+  <span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">    (model.providerID === &quot;anthropic&quot; ||</span></span>
+  <span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">      model.providerID === &quot;google-vertex-anthropic&quot; ||</span></span>
+  <span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">      model.api.id.includes(&quot;anthropic&quot;) ||</span></span>
+  <span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">      model.api.id.includes(&quot;claude&quot;) ||</span></span>
+  <span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">      model.id.includes(&quot;anthropic&quot;) ||</span></span>
+  <span class="source-line"><span class="source-line-number">438</span><span class="source-line-text">      model.id.includes(&quot;claude&quot;) ||</span></span>
+  <span class="source-line"><span class="source-line-number">439</span><span class="source-line-text">      model.api.npm === &quot;@ai-sdk/anthropic&quot; ||</span></span>
+  <span class="source-line"><span class="source-line-number">440</span><span class="source-line-text">      model.api.npm === &quot;@ai-sdk/alibaba&quot;) &amp;&amp;</span></span>
+  <span class="source-line"><span class="source-line-number">441</span><span class="source-line-text">    model.api.npm !== &quot;@ai-sdk/gateway&quot;</span></span>
+  <span class="source-line"><span class="source-line-number">442</span><span class="source-line-text">  ) {</span></span>
+  <span class="source-line"><span class="source-line-number">443</span><span class="source-line-text">    msgs = applyCaching(msgs, model)</span></span>
+  <span class="source-line"><span class="source-line-number">444</span><span class="source-line-text">  }</span></span>
+  <span class="source-line"><span class="source-line-number">445</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">446</span><span class="source-line-text">  // Remap providerOptions keys from stored providerID to expected SDK key</span></span>
+  <span class="source-line"><span class="source-line-number">447</span><span class="source-line-text">  const key = sdkKey(model.api.npm)</span></span>
+  <span class="source-line"><span class="source-line-number">448</span><span class="source-line-text">  if (key &amp;&amp; key !== model.providerID) {</span></span>
+  <span class="source-line"><span class="source-line-number">449</span><span class="source-line-text">    const remap = (opts: Record&lt;string, any&gt; | undefined) =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">450</span><span class="source-line-text">      if (!opts) return opts</span></span>
+  <span class="source-line"><span class="source-line-number">451</span><span class="source-line-text">      if (!(model.providerID in opts)) return opts</span></span>
+  <span class="source-line"><span class="source-line-number">452</span><span class="source-line-text">      const result = { ...opts }</span></span>
+  <span class="source-line"><span class="source-line-number">453</span><span class="source-line-text">      result[key] = result[model.providerID]</span></span>
+  <span class="source-line"><span class="source-line-number">454</span><span class="source-line-text">      delete result[model.providerID]</span></span>
+  <span class="source-line"><span class="source-line-number">455</span><span class="source-line-text">      return result</span></span>
+  <span class="source-line"><span class="source-line-number">456</span><span class="source-line-text">    }</span></span>
+  <span class="source-line"><span class="source-line-number">457</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">458</span><span class="source-line-text">    msgs = msgs.map((msg) =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">459</span><span class="source-line-text">      if (!Array.isArray(msg.content)) return { ...msg, providerOptions: remap(msg.providerOptions) }</span></span>
+  <span class="source-line"><span class="source-line-number">460</span><span class="source-line-text">      return {</span></span>
+  <span class="source-line"><span class="source-line-number">461</span><span class="source-line-text">        ...msg,</span></span>
+  <span class="source-line"><span class="source-line-number">462</span><span class="source-line-text">        providerOptions: remap(msg.providerOptions),</span></span>
+  <span class="source-line"><span class="source-line-number">463</span><span class="source-line-text">        content: msg.content.map((part) =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">464</span><span class="source-line-text">          if (part.type === &quot;tool-approval-request&quot; || part.type === &quot;tool-approval-response&quot;) {</span></span>
+  <span class="source-line"><span class="source-line-number">465</span><span class="source-line-text">            return { ...part }</span></span>
+  <span class="source-line"><span class="source-line-number">466</span><span class="source-line-text">          }</span></span>
+  <span class="source-line"><span class="source-line-number">467</span><span class="source-line-text">          return { ...part, providerOptions: remap(part.providerOptions) }</span></span>
+  <span class="source-line"><span class="source-line-number">468</span><span class="source-line-text">        }),</span></span>
+  <span class="source-line"><span class="source-line-number">469</span><span class="source-line-text">      } as typeof msg</span></span>
+  <span class="source-line"><span class="source-line-number">470</span><span class="source-line-text">    })</span></span>
+  <span class="source-line"><span class="source-line-number">471</span><span class="source-line-text">  }</span></span>
+  <span class="source-line"><span class="source-line-number">472</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">473</span><span class="source-line-text">  return msgs</span></span>
+  <span class="source-line"><span class="source-line-number">474</span><span class="source-line-text">}</span></span></code></pre>
+  </details>
+
 
 ## 3. 生活类比
 
@@ -596,7 +614,9 @@ Flux<LlmEvent> stream(StreamInput input) {
 }
 ```
 
-OpenCode 的实现不是 class hierarchy，而是 Effect service + 函数组合。核心服务定义在 <details class="source-ref source-ref--inline">
+OpenCode 的实现不是 class hierarchy，而是 Effect service + 函数组合。核心服务定义在 `packages/opencode/src/session/llm.ts:58-62`。
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:58-62</code></span>
@@ -606,756 +626,795 @@ OpenCode 的实现不是 class hierarchy，而是 Effect service + 函数组合�
 <span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">}</span></span>
 <span class="source-line"><span class="source-line-number">61</span><span class="source-line-text"></span></span>
 <span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">export class Service extends Context.Service&lt;Service, Interface&gt;()(&quot;@opencode/LLM&quot;) {}</span></span></code></pre>
-</details>。
+</details>
+
 
 ## 5. 最小源码路径
 
 建议按这个顺序读：
 
-1. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:39-60</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">export type StreamInput = {</span></span>
-<span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  user: MessageV2.User</span></span>
-<span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">  sessionID: string</span></span>
-<span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">  parentSessionID?: string</span></span>
-<span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">  model: Provider.Model</span></span>
-<span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  agent: Agent.Info</span></span>
-<span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">  permission?: Permission.Ruleset</span></span>
-<span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  system: string[]</span></span>
-<span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">  messages: ModelMessage[]</span></span>
-<span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  small?: boolean</span></span>
-<span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  tools: Record&lt;string, Tool&gt;</span></span>
-<span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">  retries?: number</span></span>
-<span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  toolChoice?: &quot;auto&quot; | &quot;required&quot; | &quot;none&quot;</span></span>
-<span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">}</span></span>
-<span class="source-line"><span class="source-line-number">53</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">export type StreamRequest = StreamInput &amp; {</span></span>
-<span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  abort: AbortSignal</span></span>
-<span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">}</span></span>
-<span class="source-line"><span class="source-line-number">57</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">export interface Interface {</span></span>
-<span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  readonly stream: (input: StreamInput) =&gt; Stream.Stream&lt;LLMEvent, unknown&gt;</span></span>
-<span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">}</span></span></code></pre>
-</details>：`StreamInput` 和 LLM service interface。
-2. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:99-107</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">      const [language, cfg, item, info] = yield* Effect.all(</span></span>
-<span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">        [</span></span>
-<span class="source-line"><span class="source-line-number">101</span><span class="source-line-text">          provider.getLanguage(input.model),</span></span>
-<span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">          config.get(),</span></span>
-<span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">          provider.getProvider(input.model.providerID),</span></span>
-<span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">          auth.get(input.model.providerID),</span></span>
-<span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">        ],</span></span>
-<span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">        { concurrency: &quot;unbounded&quot; },</span></span>
-<span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">      )</span></span></code></pre>
-</details>：并发取 language model、config、provider、auth。
-3. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:112-168</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">      const system: string[] = []</span></span>
-<span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">      system.push(</span></span>
-<span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">        [</span></span>
-<span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">          // use agent prompt otherwise provider prompt</span></span>
-<span class="source-line"><span class="source-line-number">116</span><span class="source-line-text">          ...(input.agent.prompt ? [input.agent.prompt] : SystemPrompt.provider(input.model)),</span></span>
-<span class="source-line"><span class="source-line-number">117</span><span class="source-line-text">          // any custom prompt passed into this call</span></span>
-<span class="source-line"><span class="source-line-number">118</span><span class="source-line-text">          ...input.system,</span></span>
-<span class="source-line"><span class="source-line-number">119</span><span class="source-line-text">          // any custom prompt from last user message</span></span>
-<span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">          ...(input.user.system ? [input.user.system] : []),</span></span>
-<span class="source-line"><span class="source-line-number">121</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">122</span><span class="source-line-text">          .filter((x) =&gt; x)</span></span>
-<span class="source-line"><span class="source-line-number">123</span><span class="source-line-text">          .join(&quot;\n&quot;),</span></span>
-<span class="source-line"><span class="source-line-number">124</span><span class="source-line-text">      )</span></span>
-<span class="source-line"><span class="source-line-number">125</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">      const header = system[0]</span></span>
-<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text">      yield* plugin.trigger(</span></span>
-<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">        &quot;experimental.chat.system.transform&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">        { sessionID: input.sessionID, model: input.model },</span></span>
-<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">        { system },</span></span>
-<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">      )</span></span>
-<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">      // rejoin to maintain 2-part structure for caching if header unchanged</span></span>
-<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">      if (system.length &gt; 2 &amp;&amp; system[0] === header) {</span></span>
-<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">        const rest = system.slice(1)</span></span>
-<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">        system.length = 0</span></span>
-<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">        system.push(header, rest.join(&quot;\n&quot;))</span></span>
-<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">      }</span></span>
-<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">      const variant =</span></span>
-<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">        !input.small &amp;&amp; input.model.variants &amp;&amp; input.user.model.variant</span></span>
-<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">          ? input.model.variants[input.user.model.variant]</span></span>
-<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">          : {}</span></span>
-<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">      const base = input.small</span></span>
-<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">        ? ProviderTransform.smallOptions(input.model)</span></span>
-<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">        : ProviderTransform.options({</span></span>
-<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">            model: input.model,</span></span>
-<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">            sessionID: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">            providerOptions: item.options,</span></span>
-<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">          })</span></span>
-<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">      const options = mergeOptions(mergeOptions(mergeOptions(base, input.model.options), input.agent.options), variant)</span></span>
-<span class="source-line"><span class="source-line-number">151</span><span class="source-line-text">      if (isOpenaiOauth) {</span></span>
-<span class="source-line"><span class="source-line-number">152</span><span class="source-line-text">        options.instructions = system.join(&quot;\n&quot;)</span></span>
-<span class="source-line"><span class="source-line-number">153</span><span class="source-line-text">      }</span></span>
-<span class="source-line"><span class="source-line-number">154</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">155</span><span class="source-line-text">      const isWorkflow = language instanceof GitLabWorkflowLanguageModel</span></span>
-<span class="source-line"><span class="source-line-number">156</span><span class="source-line-text">      const messages = isOpenaiOauth</span></span>
-<span class="source-line"><span class="source-line-number">157</span><span class="source-line-text">        ? input.messages</span></span>
-<span class="source-line"><span class="source-line-number">158</span><span class="source-line-text">        : isWorkflow</span></span>
-<span class="source-line"><span class="source-line-number">159</span><span class="source-line-text">          ? input.messages</span></span>
-<span class="source-line"><span class="source-line-number">160</span><span class="source-line-text">          : [</span></span>
-<span class="source-line"><span class="source-line-number">161</span><span class="source-line-text">              ...system.map(</span></span>
-<span class="source-line"><span class="source-line-number">162</span><span class="source-line-text">                (x): ModelMessage =&gt; ({</span></span>
-<span class="source-line"><span class="source-line-number">163</span><span class="source-line-text">                  role: &quot;system&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">164</span><span class="source-line-text">                  content: x,</span></span>
-<span class="source-line"><span class="source-line-number">165</span><span class="source-line-text">                }),</span></span>
-<span class="source-line"><span class="source-line-number">166</span><span class="source-line-text">              ),</span></span>
-<span class="source-line"><span class="source-line-number">167</span><span class="source-line-text">              ...input.messages,</span></span>
-<span class="source-line"><span class="source-line-number">168</span><span class="source-line-text">            ]</span></span></code></pre>
-</details>：拼 system prompt 和 messages。
-4. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:170-204</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">170</span><span class="source-line-text">      const params = yield* plugin.trigger(</span></span>
-<span class="source-line"><span class="source-line-number">171</span><span class="source-line-text">        &quot;chat.params&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">172</span><span class="source-line-text">        {</span></span>
-<span class="source-line"><span class="source-line-number">173</span><span class="source-line-text">          sessionID: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">174</span><span class="source-line-text">          agent: input.agent.name,</span></span>
-<span class="source-line"><span class="source-line-number">175</span><span class="source-line-text">          model: input.model,</span></span>
-<span class="source-line"><span class="source-line-number">176</span><span class="source-line-text">          provider: item,</span></span>
-<span class="source-line"><span class="source-line-number">177</span><span class="source-line-text">          message: input.user,</span></span>
-<span class="source-line"><span class="source-line-number">178</span><span class="source-line-text">        },</span></span>
-<span class="source-line"><span class="source-line-number">179</span><span class="source-line-text">        {</span></span>
-<span class="source-line"><span class="source-line-number">180</span><span class="source-line-text">          temperature: input.model.capabilities.temperature</span></span>
-<span class="source-line"><span class="source-line-number">181</span><span class="source-line-text">            ? (input.agent.temperature ?? ProviderTransform.temperature(input.model))</span></span>
-<span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">            : undefined,</span></span>
-<span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">          topP: input.agent.topP ?? ProviderTransform.topP(input.model),</span></span>
-<span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">          topK: ProviderTransform.topK(input.model),</span></span>
-<span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">          maxOutputTokens: ProviderTransform.maxOutputTokens(input.model, flags.outputTokenMax),</span></span>
-<span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">          options,</span></span>
-<span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">        },</span></span>
-<span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      )</span></span>
-<span class="source-line"><span class="source-line-number">189</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">190</span><span class="source-line-text">      const { headers } = yield* plugin.trigger(</span></span>
-<span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">        &quot;chat.headers&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">        {</span></span>
-<span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">          sessionID: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">          agent: input.agent.name,</span></span>
-<span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">          model: input.model,</span></span>
-<span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">          provider: item,</span></span>
-<span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">          message: input.user,</span></span>
-<span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">        },</span></span>
-<span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">        {</span></span>
-<span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">          headers: {},</span></span>
-<span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">        },</span></span>
-<span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">      )</span></span>
-<span class="source-line"><span class="source-line-number">203</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      const tools = resolveTools(input)</span></span></code></pre>
-</details>：插件改写参数、headers，并解析 tools。
-5. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:204-225</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      const tools = resolveTools(input)</span></span>
-<span class="source-line"><span class="source-line-number">205</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      // GitHub Copilot may require the tools parameter when message history contains</span></span>
-<span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">      // tool calls but no tools are active (e.g. compaction). Inject a stub tool that</span></span>
-<span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">      // is never meant to be invoked. LiteLLM-backed providers are excluded.</span></span>
-<span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">      if (</span></span>
-<span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">        input.model.providerID.includes(&quot;github-copilot&quot;) &amp;&amp;</span></span>
-<span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">        Object.keys(tools).length === 0 &amp;&amp;</span></span>
-<span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">        hasToolCalls(input.messages)</span></span>
-<span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">      ) {</span></span>
-<span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">        tools[&quot;_noop&quot;] = aiTool({</span></span>
-<span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">          description: &quot;Do not call this tool. It exists only for API compatibility and must never be invoked.&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">          inputSchema: jsonSchema({</span></span>
-<span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">            type: &quot;object&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">            properties: {</span></span>
-<span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">              reason: { type: &quot;string&quot;, description: &quot;Unused&quot; },</span></span>
-<span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">            },</span></span>
-<span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">          execute: async () =&gt; ({ output: &quot;&quot;, title: &quot;&quot;, metadata: {} }),</span></span>
-<span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">        })</span></span>
-<span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">      }</span></span>
-<span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">      const sortedTools = Object.fromEntries(Object.entries(tools).toSorted(([a], [b]) =&gt; a.localeCompare(b)))</span></span></code></pre>
-</details>、<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:512-518</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">512</span><span class="source-line-text">function resolveTools(input: Pick&lt;StreamInput, &quot;tools&quot; | &quot;agent&quot; | &quot;permission&quot; | &quot;user&quot;&gt;) {</span></span>
-<span class="source-line"><span class="source-line-number">513</span><span class="source-line-text">  const disabled = Permission.disabled(</span></span>
-<span class="source-line"><span class="source-line-number">514</span><span class="source-line-text">    Object.keys(input.tools),</span></span>
-<span class="source-line"><span class="source-line-number">515</span><span class="source-line-text">    Permission.merge(input.agent.permission, input.permission ?? []),</span></span>
-<span class="source-line"><span class="source-line-number">516</span><span class="source-line-text">  )</span></span>
-<span class="source-line"><span class="source-line-number">517</span><span class="source-line-text">  return Record.filter(input.tools, (_, k) =&gt; input.user.tools?.[k] !== false &amp;&amp; !disabled.has(k))</span></span>
-<span class="source-line"><span class="source-line-number">518</span><span class="source-line-text">}</span></span></code></pre>
-</details>：按权限和用户设置过滤 tools。
-6. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:330-350</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">330</span><span class="source-line-text">      const opencodeProjectID = input.model.providerID.startsWith(&quot;opencode&quot;)</span></span>
-<span class="source-line"><span class="source-line-number">331</span><span class="source-line-text">        ? (yield* InstanceState.context).project.id</span></span>
-<span class="source-line"><span class="source-line-number">332</span><span class="source-line-text">        : undefined</span></span>
-<span class="source-line"><span class="source-line-number">333</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">334</span><span class="source-line-text">      const requestHeaders = {</span></span>
-<span class="source-line"><span class="source-line-number">335</span><span class="source-line-text">        ...(input.model.providerID.startsWith(&quot;opencode&quot;)</span></span>
-<span class="source-line"><span class="source-line-number">336</span><span class="source-line-text">          ? {</span></span>
-<span class="source-line"><span class="source-line-number">337</span><span class="source-line-text">              ...(opencodeProjectID ? { &quot;x-opencode-project&quot;: opencodeProjectID } : {}),</span></span>
-<span class="source-line"><span class="source-line-number">338</span><span class="source-line-text">              &quot;x-opencode-session&quot;: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">339</span><span class="source-line-text">              &quot;x-opencode-request&quot;: input.user.id,</span></span>
-<span class="source-line"><span class="source-line-number">340</span><span class="source-line-text">              &quot;x-opencode-client&quot;: flags.client,</span></span>
-<span class="source-line"><span class="source-line-number">341</span><span class="source-line-text">              &quot;User-Agent&quot;: `opencode/${InstallationVersion}`,</span></span>
-<span class="source-line"><span class="source-line-number">342</span><span class="source-line-text">            }</span></span>
-<span class="source-line"><span class="source-line-number">343</span><span class="source-line-text">          : {</span></span>
-<span class="source-line"><span class="source-line-number">344</span><span class="source-line-text">              &quot;x-session-affinity&quot;: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">345</span><span class="source-line-text">              ...(input.parentSessionID ? { &quot;x-parent-session-id&quot;: input.parentSessionID } : {}),</span></span>
-<span class="source-line"><span class="source-line-number">346</span><span class="source-line-text">              &quot;User-Agent&quot;: `opencode/${InstallationVersion}`,</span></span>
-<span class="source-line"><span class="source-line-number">347</span><span class="source-line-text">            }),</span></span>
-<span class="source-line"><span class="source-line-number">348</span><span class="source-line-text">        ...input.model.headers,</span></span>
-<span class="source-line"><span class="source-line-number">349</span><span class="source-line-text">        ...headers,</span></span>
-<span class="source-line"><span class="source-line-number">350</span><span class="source-line-text">      }</span></span></code></pre>
-</details>：构造 request headers。
-7. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:352-392</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">352</span><span class="source-line-text">      if (flags.experimentalNativeLlm) {</span></span>
-<span class="source-line"><span class="source-line-number">353</span><span class="source-line-text">        const native = LLMNativeRuntime.stream({</span></span>
-<span class="source-line"><span class="source-line-number">354</span><span class="source-line-text">          model: input.model,</span></span>
-<span class="source-line"><span class="source-line-number">355</span><span class="source-line-text">          provider: item,</span></span>
-<span class="source-line"><span class="source-line-number">356</span><span class="source-line-text">          auth: info,</span></span>
-<span class="source-line"><span class="source-line-number">357</span><span class="source-line-text">          llmClient,</span></span>
-<span class="source-line"><span class="source-line-number">358</span><span class="source-line-text">          isOpenaiOauth,</span></span>
-<span class="source-line"><span class="source-line-number">359</span><span class="source-line-text">          system,</span></span>
-<span class="source-line"><span class="source-line-number">360</span><span class="source-line-text">          messages,</span></span>
-<span class="source-line"><span class="source-line-number">361</span><span class="source-line-text">          tools: sortedTools,</span></span>
-<span class="source-line"><span class="source-line-number">362</span><span class="source-line-text">          toolChoice: input.toolChoice,</span></span>
-<span class="source-line"><span class="source-line-number">363</span><span class="source-line-text">          temperature: params.temperature,</span></span>
-<span class="source-line"><span class="source-line-number">364</span><span class="source-line-text">          topP: params.topP,</span></span>
-<span class="source-line"><span class="source-line-number">365</span><span class="source-line-text">          topK: params.topK,</span></span>
-<span class="source-line"><span class="source-line-number">366</span><span class="source-line-text">          maxOutputTokens: params.maxOutputTokens,</span></span>
-<span class="source-line"><span class="source-line-number">367</span><span class="source-line-text">          providerOptions: params.options,</span></span>
-<span class="source-line"><span class="source-line-number">368</span><span class="source-line-text">          headers: requestHeaders,</span></span>
-<span class="source-line"><span class="source-line-number">369</span><span class="source-line-text">          abort: input.abort,</span></span>
-<span class="source-line"><span class="source-line-number">370</span><span class="source-line-text">        })</span></span>
-<span class="source-line"><span class="source-line-number">371</span><span class="source-line-text">        if (native.type === &quot;supported&quot;) {</span></span>
-<span class="source-line"><span class="source-line-number">372</span><span class="source-line-text">          yield* Effect.logInfo(&quot;llm runtime selected&quot;).pipe(</span></span>
-<span class="source-line"><span class="source-line-number">373</span><span class="source-line-text">            Effect.annotateLogs({</span></span>
-<span class="source-line"><span class="source-line-number">374</span><span class="source-line-text">              &quot;llm.runtime&quot;: &quot;native&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">375</span><span class="source-line-text">              &quot;llm.provider&quot;: input.model.providerID,</span></span>
-<span class="source-line"><span class="source-line-number">376</span><span class="source-line-text">              &quot;llm.model&quot;: input.model.id,</span></span>
-<span class="source-line"><span class="source-line-number">377</span><span class="source-line-text">            }),</span></span>
-<span class="source-line"><span class="source-line-number">378</span><span class="source-line-text">          )</span></span>
-<span class="source-line"><span class="source-line-number">379</span><span class="source-line-text">          return {</span></span>
-<span class="source-line"><span class="source-line-number">380</span><span class="source-line-text">            type: &quot;native&quot; as const,</span></span>
-<span class="source-line"><span class="source-line-number">381</span><span class="source-line-text">            stream: native.stream,</span></span>
-<span class="source-line"><span class="source-line-number">382</span><span class="source-line-text">          }</span></span>
-<span class="source-line"><span class="source-line-number">383</span><span class="source-line-text">        }</span></span>
-<span class="source-line"><span class="source-line-number">384</span><span class="source-line-text">        yield* Effect.logInfo(&quot;llm runtime selected&quot;).pipe(</span></span>
-<span class="source-line"><span class="source-line-number">385</span><span class="source-line-text">          Effect.annotateLogs({</span></span>
-<span class="source-line"><span class="source-line-number">386</span><span class="source-line-text">            &quot;llm.runtime&quot;: &quot;ai-sdk&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">387</span><span class="source-line-text">            &quot;llm.provider&quot;: input.model.providerID,</span></span>
-<span class="source-line"><span class="source-line-number">388</span><span class="source-line-text">            &quot;llm.model&quot;: input.model.id,</span></span>
-<span class="source-line"><span class="source-line-number">389</span><span class="source-line-text">            &quot;llm.native_unsupported_reason&quot;: native.reason,</span></span>
-<span class="source-line"><span class="source-line-number">390</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">391</span><span class="source-line-text">        )</span></span>
-<span class="source-line"><span class="source-line-number">392</span><span class="source-line-text">        l.info(&quot;native runtime unavailable; falling back to ai-sdk&quot;, { reason: native.reason })</span></span></code></pre>
-</details>：尝试 native runtime，否则回退 AI SDK。
-8. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:402-467</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">402</span><span class="source-line-text">      return {</span></span>
-<span class="source-line"><span class="source-line-number">403</span><span class="source-line-text">        type: &quot;ai-sdk&quot; as const,</span></span>
-<span class="source-line"><span class="source-line-number">404</span><span class="source-line-text">        result: streamText({</span></span>
-<span class="source-line"><span class="source-line-number">405</span><span class="source-line-text">          onError(error) {</span></span>
-<span class="source-line"><span class="source-line-number">406</span><span class="source-line-text">            l.error(&quot;stream error&quot;, {</span></span>
-<span class="source-line"><span class="source-line-number">407</span><span class="source-line-text">              error,</span></span>
-<span class="source-line"><span class="source-line-number">408</span><span class="source-line-text">            })</span></span>
-<span class="source-line"><span class="source-line-number">409</span><span class="source-line-text">          },</span></span>
-<span class="source-line"><span class="source-line-number">410</span><span class="source-line-text">          async experimental_repairToolCall(failed) {</span></span>
-<span class="source-line"><span class="source-line-number">411</span><span class="source-line-text">            const lower = failed.toolCall.toolName.toLowerCase()</span></span>
-<span class="source-line"><span class="source-line-number">412</span><span class="source-line-text">            if (lower !== failed.toolCall.toolName &amp;&amp; sortedTools[lower]) {</span></span>
-<span class="source-line"><span class="source-line-number">413</span><span class="source-line-text">              l.info(&quot;repairing tool call&quot;, {</span></span>
-<span class="source-line"><span class="source-line-number">414</span><span class="source-line-text">                tool: failed.toolCall.toolName,</span></span>
-<span class="source-line"><span class="source-line-number">415</span><span class="source-line-text">                repaired: lower,</span></span>
-<span class="source-line"><span class="source-line-number">416</span><span class="source-line-text">              })</span></span>
-<span class="source-line"><span class="source-line-number">417</span><span class="source-line-text">              return {</span></span>
-<span class="source-line"><span class="source-line-number">418</span><span class="source-line-text">                ...failed.toolCall,</span></span>
-<span class="source-line"><span class="source-line-number">419</span><span class="source-line-text">                toolName: lower,</span></span>
-<span class="source-line"><span class="source-line-number">420</span><span class="source-line-text">              }</span></span>
-<span class="source-line"><span class="source-line-number">421</span><span class="source-line-text">            }</span></span>
-<span class="source-line"><span class="source-line-number">422</span><span class="source-line-text">            return {</span></span>
-<span class="source-line"><span class="source-line-number">423</span><span class="source-line-text">              ...failed.toolCall,</span></span>
-<span class="source-line"><span class="source-line-number">424</span><span class="source-line-text">              input: JSON.stringify({</span></span>
-<span class="source-line"><span class="source-line-number">425</span><span class="source-line-text">                tool: failed.toolCall.toolName,</span></span>
-<span class="source-line"><span class="source-line-number">426</span><span class="source-line-text">                error: failed.error.message,</span></span>
-<span class="source-line"><span class="source-line-number">427</span><span class="source-line-text">              }),</span></span>
-<span class="source-line"><span class="source-line-number">428</span><span class="source-line-text">              toolName: &quot;invalid&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">429</span><span class="source-line-text">            }</span></span>
-<span class="source-line"><span class="source-line-number">430</span><span class="source-line-text">          },</span></span>
-<span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">          temperature: params.temperature,</span></span>
-<span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">          topP: params.topP,</span></span>
-<span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">          topK: params.topK,</span></span>
-<span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">          providerOptions: ProviderTransform.providerOptions(input.model, params.options),</span></span>
-<span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">          activeTools: Object.keys(sortedTools).filter((x) =&gt; x !== &quot;invalid&quot;),</span></span>
-<span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">          tools: sortedTools,</span></span>
-<span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">          toolChoice: input.toolChoice,</span></span>
-<span class="source-line"><span class="source-line-number">438</span><span class="source-line-text">          maxOutputTokens: params.maxOutputTokens,</span></span>
-<span class="source-line"><span class="source-line-number">439</span><span class="source-line-text">          abortSignal: input.abort,</span></span>
-<span class="source-line"><span class="source-line-number">440</span><span class="source-line-text">          headers: requestHeaders,</span></span>
-<span class="source-line"><span class="source-line-number">441</span><span class="source-line-text">          maxRetries: input.retries ?? 0,</span></span>
-<span class="source-line"><span class="source-line-number">442</span><span class="source-line-text">          messages,</span></span>
-<span class="source-line"><span class="source-line-number">443</span><span class="source-line-text">          model: wrapLanguageModel({</span></span>
-<span class="source-line"><span class="source-line-number">444</span><span class="source-line-text">            model: language,</span></span>
-<span class="source-line"><span class="source-line-number">445</span><span class="source-line-text">            middleware: [</span></span>
-<span class="source-line"><span class="source-line-number">446</span><span class="source-line-text">              {</span></span>
-<span class="source-line"><span class="source-line-number">447</span><span class="source-line-text">                specificationVersion: &quot;v3&quot; as const,</span></span>
-<span class="source-line"><span class="source-line-number">448</span><span class="source-line-text">                async transformParams(args) {</span></span>
-<span class="source-line"><span class="source-line-number">449</span><span class="source-line-text">                  if (args.type === &quot;stream&quot;) {</span></span>
-<span class="source-line"><span class="source-line-number">450</span><span class="source-line-text">                    // @ts-expect-error</span></span>
-<span class="source-line"><span class="source-line-number">451</span><span class="source-line-text">                    args.params.prompt = ProviderTransform.message(args.params.prompt, input.model, options)</span></span>
-<span class="source-line"><span class="source-line-number">452</span><span class="source-line-text">                  }</span></span>
-<span class="source-line"><span class="source-line-number">453</span><span class="source-line-text">                  return args.params</span></span>
-<span class="source-line"><span class="source-line-number">454</span><span class="source-line-text">                },</span></span>
-<span class="source-line"><span class="source-line-number">455</span><span class="source-line-text">              },</span></span>
-<span class="source-line"><span class="source-line-number">456</span><span class="source-line-text">            ],</span></span>
-<span class="source-line"><span class="source-line-number">457</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">458</span><span class="source-line-text">          experimental_telemetry: {</span></span>
-<span class="source-line"><span class="source-line-number">459</span><span class="source-line-text">            isEnabled: cfg.experimental?.openTelemetry,</span></span>
-<span class="source-line"><span class="source-line-number">460</span><span class="source-line-text">            functionId: &quot;session.llm&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">461</span><span class="source-line-text">            tracer: telemetryTracer,</span></span>
-<span class="source-line"><span class="source-line-number">462</span><span class="source-line-text">            metadata: {</span></span>
-<span class="source-line"><span class="source-line-number">463</span><span class="source-line-text">              userId: cfg.username ?? &quot;unknown&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">464</span><span class="source-line-text">              sessionId: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">465</span><span class="source-line-text">            },</span></span>
-<span class="source-line"><span class="source-line-number">466</span><span class="source-line-text">          },</span></span>
-<span class="source-line"><span class="source-line-number">467</span><span class="source-line-text">        }),</span></span></code></pre>
-</details>：调用 `streamText`。
-9. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:471-493</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">471</span><span class="source-line-text">    const stream: Interface[&quot;stream&quot;] = (input) =&gt;</span></span>
-<span class="source-line"><span class="source-line-number">472</span><span class="source-line-text">      Stream.scoped(</span></span>
-<span class="source-line"><span class="source-line-number">473</span><span class="source-line-text">        Stream.unwrap(</span></span>
-<span class="source-line"><span class="source-line-number">474</span><span class="source-line-text">          Effect.gen(function* () {</span></span>
-<span class="source-line"><span class="source-line-number">475</span><span class="source-line-text">            const ctrl = yield* Effect.acquireRelease(</span></span>
-<span class="source-line"><span class="source-line-number">476</span><span class="source-line-text">              Effect.sync(() =&gt; new AbortController()),</span></span>
-<span class="source-line"><span class="source-line-number">477</span><span class="source-line-text">              (ctrl) =&gt; Effect.sync(() =&gt; ctrl.abort()),</span></span>
-<span class="source-line"><span class="source-line-number">478</span><span class="source-line-text">            )</span></span>
-<span class="source-line"><span class="source-line-number">479</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">480</span><span class="source-line-text">            const result = yield* run({ ...input, abort: ctrl.signal })</span></span>
-<span class="source-line"><span class="source-line-number">481</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">482</span><span class="source-line-text">            if (result.type === &quot;native&quot;) return result.stream</span></span>
-<span class="source-line"><span class="source-line-number">483</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">484</span><span class="source-line-text">            const state = LLMAISDK.adapterState()</span></span>
-<span class="source-line"><span class="source-line-number">485</span><span class="source-line-text">            return Stream.fromAsyncIterable(result.result.fullStream, (e) =&gt;</span></span>
-<span class="source-line"><span class="source-line-number">486</span><span class="source-line-text">              e instanceof Error ? e : new Error(String(e)),</span></span>
-<span class="source-line"><span class="source-line-number">487</span><span class="source-line-text">            ).pipe(</span></span>
-<span class="source-line"><span class="source-line-number">488</span><span class="source-line-text">              Stream.mapEffect((event) =&gt; LLMAISDK.toLLMEvents(state, event)),</span></span>
-<span class="source-line"><span class="source-line-number">489</span><span class="source-line-text">              Stream.flatMap((events) =&gt; Stream.fromIterable(events)),</span></span>
-<span class="source-line"><span class="source-line-number">490</span><span class="source-line-text">            )</span></span>
-<span class="source-line"><span class="source-line-number">491</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">492</span><span class="source-line-text">        ),</span></span>
-<span class="source-line"><span class="source-line-number">493</span><span class="source-line-text">      )</span></span></code></pre>
-</details>：把 AI SDK fullStream 转成 Effect stream。
-10. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm/ai-sdk.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm/ai-sdk.ts:61-236</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">export function toLLMEvents(</span></span>
-<span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">  state: ReturnType&lt;typeof adapterState&gt;,</span></span>
-<span class="source-line"><span class="source-line-number">63</span><span class="source-line-text">  event: AISDKEvent,</span></span>
-<span class="source-line"><span class="source-line-number">64</span><span class="source-line-text">): Effect.Effect&lt;ReadonlyArray&lt;LLMEvent&gt;, unknown&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">65</span><span class="source-line-text">  switch (event.type) {</span></span>
-<span class="source-line"><span class="source-line-number">66</span><span class="source-line-text">    case &quot;start&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">67</span><span class="source-line-text">      return Effect.succeed([])</span></span>
-<span class="source-line"><span class="source-line-number">68</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">69</span><span class="source-line-text">    case &quot;start-step&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">70</span><span class="source-line-text">      return Effect.succeed([LLMEvent.stepStart({ index: state.step })])</span></span>
-<span class="source-line"><span class="source-line-number">71</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">72</span><span class="source-line-text">    case &quot;finish-step&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">73</span><span class="source-line-text">      return Effect.sync(() =&gt; [</span></span>
-<span class="source-line"><span class="source-line-number">74</span><span class="source-line-text">        LLMEvent.stepFinish({</span></span>
-<span class="source-line"><span class="source-line-number">75</span><span class="source-line-text">          index: state.step++,</span></span>
-<span class="source-line"><span class="source-line-number">76</span><span class="source-line-text">          reason: finishReason(event.finishReason),</span></span>
-<span class="source-line"><span class="source-line-number">77</span><span class="source-line-text">          usage: usage(event.usage),</span></span>
-<span class="source-line"><span class="source-line-number">78</span><span class="source-line-text">          providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">79</span><span class="source-line-text">        }),</span></span>
-<span class="source-line"><span class="source-line-number">80</span><span class="source-line-text">      ])</span></span>
-<span class="source-line"><span class="source-line-number">81</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">82</span><span class="source-line-text">    case &quot;finish&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">83</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">84</span><span class="source-line-text">        const events = [</span></span>
-<span class="source-line"><span class="source-line-number">85</span><span class="source-line-text">          LLMEvent.finish({</span></span>
-<span class="source-line"><span class="source-line-number">86</span><span class="source-line-text">            reason: finishReason(event.finishReason),</span></span>
-<span class="source-line"><span class="source-line-number">87</span><span class="source-line-text">            usage: usage(event.totalUsage),</span></span>
-<span class="source-line"><span class="source-line-number">88</span><span class="source-line-text">            providerMetadata: &quot;providerMetadata&quot; in event ? providerMetadata(event.providerMetadata) : undefined,</span></span>
-<span class="source-line"><span class="source-line-number">89</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">90</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">91</span><span class="source-line-text">        // Reset so the adapter can be reused for a follow-up stream without leaking</span></span>
-<span class="source-line"><span class="source-line-number">92</span><span class="source-line-text">        // counters or block IDs. adapterState() is the single source of truth for shape.</span></span>
-<span class="source-line"><span class="source-line-number">93</span><span class="source-line-text">        Object.assign(state, adapterState())</span></span>
-<span class="source-line"><span class="source-line-number">94</span><span class="source-line-text">        return events</span></span>
-<span class="source-line"><span class="source-line-number">95</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">96</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">97</span><span class="source-line-text">    case &quot;text-start&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">98</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">        state.currentTextID = currentTextID(state, event.id)</span></span>
-<span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">        return [</span></span>
-<span class="source-line"><span class="source-line-number">101</span><span class="source-line-text">          LLMEvent.textStart({</span></span>
-<span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">            id: state.currentTextID,</span></span>
-<span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">107</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">108</span><span class="source-line-text">    case &quot;text-delta&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">109</span><span class="source-line-text">      return Effect.succeed([</span></span>
-<span class="source-line"><span class="source-line-number">110</span><span class="source-line-text">        LLMEvent.textDelta({</span></span>
-<span class="source-line"><span class="source-line-number">111</span><span class="source-line-text">          id: currentTextID(state, event.id),</span></span>
-<span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">          text: event.text,</span></span>
-<span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">          providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">        }),</span></span>
-<span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">      ])</span></span>
-<span class="source-line"><span class="source-line-number">116</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">117</span><span class="source-line-text">    case &quot;text-end&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">118</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">119</span><span class="source-line-text">        const id = currentTextID(state, event.id)</span></span>
-<span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">        state.currentTextID = undefined</span></span>
-<span class="source-line"><span class="source-line-number">121</span><span class="source-line-text">        return [</span></span>
-<span class="source-line"><span class="source-line-number">122</span><span class="source-line-text">          LLMEvent.textEnd({</span></span>
-<span class="source-line"><span class="source-line-number">123</span><span class="source-line-text">            id,</span></span>
-<span class="source-line"><span class="source-line-number">124</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">125</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">127</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">128</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">    case &quot;reasoning-start&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">        state.currentReasoningID = currentReasoningID(state, event.id)</span></span>
-<span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">        return [</span></span>
-<span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">          LLMEvent.reasoningStart({</span></span>
-<span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">            id: state.currentReasoningID,</span></span>
-<span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">138</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">139</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">    case &quot;reasoning-delta&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">      return Effect.succeed([</span></span>
-<span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">        LLMEvent.reasoningDelta({</span></span>
-<span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">          id: currentReasoningID(state, event.id),</span></span>
-<span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">          text: event.text,</span></span>
-<span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">          providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">        }),</span></span>
-<span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">      ])</span></span>
-<span class="source-line"><span class="source-line-number">148</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">    case &quot;reasoning-end&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">151</span><span class="source-line-text">        const id = currentReasoningID(state, event.id)</span></span>
-<span class="source-line"><span class="source-line-number">152</span><span class="source-line-text">        state.currentReasoningID = undefined</span></span>
-<span class="source-line"><span class="source-line-number">153</span><span class="source-line-text">        return [</span></span>
-<span class="source-line"><span class="source-line-number">154</span><span class="source-line-text">          LLMEvent.reasoningEnd({</span></span>
-<span class="source-line"><span class="source-line-number">155</span><span class="source-line-text">            id,</span></span>
-<span class="source-line"><span class="source-line-number">156</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">157</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">158</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">159</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">160</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">161</span><span class="source-line-text">    case &quot;tool-input-start&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">162</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">163</span><span class="source-line-text">        state.toolNames[event.id] = event.toolName</span></span>
-<span class="source-line"><span class="source-line-number">164</span><span class="source-line-text">        return [</span></span>
-<span class="source-line"><span class="source-line-number">165</span><span class="source-line-text">          LLMEvent.toolInputStart({</span></span>
-<span class="source-line"><span class="source-line-number">166</span><span class="source-line-text">            id: event.id,</span></span>
-<span class="source-line"><span class="source-line-number">167</span><span class="source-line-text">            name: event.toolName,</span></span>
-<span class="source-line"><span class="source-line-number">168</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">169</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">170</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">171</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">172</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">173</span><span class="source-line-text">    case &quot;tool-input-delta&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">174</span><span class="source-line-text">      return Effect.succeed([</span></span>
-<span class="source-line"><span class="source-line-number">175</span><span class="source-line-text">        LLMEvent.toolInputDelta({</span></span>
-<span class="source-line"><span class="source-line-number">176</span><span class="source-line-text">          id: event.id,</span></span>
-<span class="source-line"><span class="source-line-number">177</span><span class="source-line-text">          name: state.toolNames[event.id] ?? &quot;unknown&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">178</span><span class="source-line-text">          text: event.delta ?? &quot;&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">179</span><span class="source-line-text">        }),</span></span>
-<span class="source-line"><span class="source-line-number">180</span><span class="source-line-text">      ])</span></span>
-<span class="source-line"><span class="source-line-number">181</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">    case &quot;tool-input-end&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">      return Effect.succeed([</span></span>
-<span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">        LLMEvent.toolInputEnd({</span></span>
-<span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">          id: event.id,</span></span>
-<span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">          name: state.toolNames[event.id] ?? &quot;unknown&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">          providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">        }),</span></span>
-<span class="source-line"><span class="source-line-number">189</span><span class="source-line-text">      ])</span></span>
-<span class="source-line"><span class="source-line-number">190</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">    case &quot;tool-call&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">        state.toolNames[event.toolCallId] = event.toolName</span></span>
-<span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">        return [</span></span>
-<span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">          LLMEvent.toolCall({</span></span>
-<span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">            id: event.toolCallId,</span></span>
-<span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">            name: event.toolName,</span></span>
-<span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">            input: event.input,</span></span>
-<span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">            providerExecuted: &quot;providerExecuted&quot; in event ? event.providerExecuted : undefined,</span></span>
-<span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">203</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">204</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">205</span><span class="source-line-text">    case &quot;tool-result&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">        const name = state.toolNames[event.toolCallId] ?? &quot;unknown&quot;</span></span>
-<span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">        delete state.toolNames[event.toolCallId]</span></span>
-<span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">        return [</span></span>
-<span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">          LLMEvent.toolResult({</span></span>
-<span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">            id: event.toolCallId,</span></span>
-<span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">            name,</span></span>
-<span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">            result: ToolResultValue.make(event.output),</span></span>
-<span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">            providerExecuted: &quot;providerExecuted&quot; in event ? event.providerExecuted : undefined,</span></span>
-<span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">219</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">    case &quot;tool-error&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">        const name = state.toolNames[event.toolCallId] ?? (&quot;toolName&quot; in event ? event.toolName : &quot;unknown&quot;)</span></span>
-<span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">        delete state.toolNames[event.toolCallId]</span></span>
-<span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">        return [</span></span>
-<span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">          LLMEvent.toolError({</span></span>
-<span class="source-line"><span class="source-line-number">226</span><span class="source-line-text">            id: event.toolCallId,</span></span>
-<span class="source-line"><span class="source-line-number">227</span><span class="source-line-text">            name,</span></span>
-<span class="source-line"><span class="source-line-number">228</span><span class="source-line-text">            message: errorMessage(event.error),</span></span>
-<span class="source-line"><span class="source-line-number">229</span><span class="source-line-text">            error: event.error,</span></span>
-<span class="source-line"><span class="source-line-number">230</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
-<span class="source-line"><span class="source-line-number">231</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">232</span><span class="source-line-text">        ]</span></span>
-<span class="source-line"><span class="source-line-number">233</span><span class="source-line-text">      })</span></span>
-<span class="source-line"><span class="source-line-number">234</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">235</span><span class="source-line-text">    case &quot;error&quot;:</span></span>
-<span class="source-line"><span class="source-line-number">236</span><span class="source-line-text">      return Effect.fail(event.error)</span></span></code></pre>
-</details>：把 AI SDK event 转成 `LLMEvent`。
-11. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1508-1649</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">1508</span><span class="source-line-text">    async function resolveSDK(model: Model, s: State, envs: Record&lt;string, string | undefined&gt;) {</span></span>
-<span class="source-line"><span class="source-line-number">1509</span><span class="source-line-text">      try {</span></span>
-<span class="source-line"><span class="source-line-number">1510</span><span class="source-line-text">        using _ = log.time(&quot;getSDK&quot;, {</span></span>
-<span class="source-line"><span class="source-line-number">1511</span><span class="source-line-text">          providerID: model.providerID,</span></span>
-<span class="source-line"><span class="source-line-number">1512</span><span class="source-line-text">        })</span></span>
-<span class="source-line"><span class="source-line-number">1513</span><span class="source-line-text">        const provider = s.providers[model.providerID]</span></span>
-<span class="source-line"><span class="source-line-number">1514</span><span class="source-line-text">        const options = { ...provider.options }</span></span>
-<span class="source-line"><span class="source-line-number">1515</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1516</span><span class="source-line-text">        if (model.providerID === &quot;google-vertex&quot; &amp;&amp; !model.api.npm.includes(&quot;@ai-sdk/openai-compatible&quot;)) {</span></span>
-<span class="source-line"><span class="source-line-number">1517</span><span class="source-line-text">          delete options.fetch</span></span>
-<span class="source-line"><span class="source-line-number">1518</span><span class="source-line-text">        }</span></span>
-<span class="source-line"><span class="source-line-number">1519</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1520</span><span class="source-line-text">        if (model.api.npm.includes(&quot;@ai-sdk/openai-compatible&quot;) &amp;&amp; options[&quot;includeUsage&quot;] !== false) {</span></span>
-<span class="source-line"><span class="source-line-number">1521</span><span class="source-line-text">          options[&quot;includeUsage&quot;] = true</span></span>
-<span class="source-line"><span class="source-line-number">1522</span><span class="source-line-text">        }</span></span>
-<span class="source-line"><span class="source-line-number">1523</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1524</span><span class="source-line-text">        const baseURL = iife(() =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">1525</span><span class="source-line-text">          let url =</span></span>
-<span class="source-line"><span class="source-line-number">1526</span><span class="source-line-text">            typeof options[&quot;baseURL&quot;] === &quot;string&quot; &amp;&amp; options[&quot;baseURL&quot;] !== &quot;&quot; ? options[&quot;baseURL&quot;] : model.api.url</span></span>
-<span class="source-line"><span class="source-line-number">1527</span><span class="source-line-text">          if (!url) return</span></span>
-<span class="source-line"><span class="source-line-number">1528</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1529</span><span class="source-line-text">          const loader = s.varsLoaders[model.providerID]</span></span>
-<span class="source-line"><span class="source-line-number">1530</span><span class="source-line-text">          if (loader) {</span></span>
-<span class="source-line"><span class="source-line-number">1531</span><span class="source-line-text">            const vars = loader(options)</span></span>
-<span class="source-line"><span class="source-line-number">1532</span><span class="source-line-text">            for (const [key, value] of Object.entries(vars)) {</span></span>
-<span class="source-line"><span class="source-line-number">1533</span><span class="source-line-text">              const field = &quot;${&quot; + key + &quot;}&quot;</span></span>
-<span class="source-line"><span class="source-line-number">1534</span><span class="source-line-text">              url = url.replaceAll(field, value)</span></span>
-<span class="source-line"><span class="source-line-number">1535</span><span class="source-line-text">            }</span></span>
-<span class="source-line"><span class="source-line-number">1536</span><span class="source-line-text">          }</span></span>
-<span class="source-line"><span class="source-line-number">1537</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1538</span><span class="source-line-text">          url = url.replace(/\$\{([^}]+)\}/g, (item, key) =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">1539</span><span class="source-line-text">            const val = envs[String(key)]</span></span>
-<span class="source-line"><span class="source-line-number">1540</span><span class="source-line-text">            return val ?? item</span></span>
-<span class="source-line"><span class="source-line-number">1541</span><span class="source-line-text">          })</span></span>
-<span class="source-line"><span class="source-line-number">1542</span><span class="source-line-text">          return url</span></span>
-<span class="source-line"><span class="source-line-number">1543</span><span class="source-line-text">        })</span></span>
-<span class="source-line"><span class="source-line-number">1544</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1545</span><span class="source-line-text">        if (baseURL !== undefined) options[&quot;baseURL&quot;] = baseURL</span></span>
-<span class="source-line"><span class="source-line-number">1546</span><span class="source-line-text">        if (options[&quot;apiKey&quot;] === undefined &amp;&amp; provider.key) options[&quot;apiKey&quot;] = provider.key</span></span>
-<span class="source-line"><span class="source-line-number">1547</span><span class="source-line-text">        if (model.headers)</span></span>
-<span class="source-line"><span class="source-line-number">1548</span><span class="source-line-text">          options[&quot;headers&quot;] = {</span></span>
-<span class="source-line"><span class="source-line-number">1549</span><span class="source-line-text">            ...options[&quot;headers&quot;],</span></span>
-<span class="source-line"><span class="source-line-number">1550</span><span class="source-line-text">            ...model.headers,</span></span>
-<span class="source-line"><span class="source-line-number">1551</span><span class="source-line-text">          }</span></span>
-<span class="source-line"><span class="source-line-number">1552</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1553</span><span class="source-line-text">        const key = Hash.fast(</span></span>
-<span class="source-line"><span class="source-line-number">1554</span><span class="source-line-text">          JSON.stringify({</span></span>
-<span class="source-line"><span class="source-line-number">1555</span><span class="source-line-text">            providerID: model.providerID,</span></span>
-<span class="source-line"><span class="source-line-number">1556</span><span class="source-line-text">            npm: model.api.npm,</span></span>
-<span class="source-line"><span class="source-line-number">1557</span><span class="source-line-text">            options,</span></span>
-<span class="source-line"><span class="source-line-number">1558</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">1559</span><span class="source-line-text">        )</span></span>
-<span class="source-line"><span class="source-line-number">1560</span><span class="source-line-text">        const existing = s.sdk.get(key)</span></span>
-<span class="source-line"><span class="source-line-number">1561</span><span class="source-line-text">        if (existing) return existing</span></span>
-<span class="source-line"><span class="source-line-number">1562</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1563</span><span class="source-line-text">        const customFetch = options[&quot;fetch&quot;]</span></span>
-<span class="source-line"><span class="source-line-number">1564</span><span class="source-line-text">        const chunkTimeout = options[&quot;chunkTimeout&quot;]</span></span>
-<span class="source-line"><span class="source-line-number">1565</span><span class="source-line-text">        delete options[&quot;chunkTimeout&quot;]</span></span>
-<span class="source-line"><span class="source-line-number">1566</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1567</span><span class="source-line-text">        options[&quot;fetch&quot;] = async (input: any, init?: BunFetchRequestInit) =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">1568</span><span class="source-line-text">          const fetchFn = customFetch ?? fetch</span></span>
-<span class="source-line"><span class="source-line-number">1569</span><span class="source-line-text">          const opts = init ?? {}</span></span>
-<span class="source-line"><span class="source-line-number">1570</span><span class="source-line-text">          const chunkAbortCtl = typeof chunkTimeout === &quot;number&quot; &amp;&amp; chunkTimeout &gt; 0 ? new AbortController() : undefined</span></span>
-<span class="source-line"><span class="source-line-number">1571</span><span class="source-line-text">          const signals: AbortSignal[] = []</span></span>
-<span class="source-line"><span class="source-line-number">1572</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1573</span><span class="source-line-text">          if (opts.signal) signals.push(opts.signal)</span></span>
-<span class="source-line"><span class="source-line-number">1574</span><span class="source-line-text">          if (chunkAbortCtl) signals.push(chunkAbortCtl.signal)</span></span>
-<span class="source-line"><span class="source-line-number">1575</span><span class="source-line-text">          if (options[&quot;timeout&quot;] !== undefined &amp;&amp; options[&quot;timeout&quot;] !== null &amp;&amp; options[&quot;timeout&quot;] !== false)</span></span>
-<span class="source-line"><span class="source-line-number">1576</span><span class="source-line-text">            signals.push(AbortSignal.timeout(options[&quot;timeout&quot;]))</span></span>
-<span class="source-line"><span class="source-line-number">1577</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1578</span><span class="source-line-text">          const combined = signals.length === 0 ? null : signals.length === 1 ? signals[0] : AbortSignal.any(signals)</span></span>
-<span class="source-line"><span class="source-line-number">1579</span><span class="source-line-text">          if (combined) opts.signal = combined</span></span>
-<span class="source-line"><span class="source-line-number">1580</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1581</span><span class="source-line-text">          // Strip openai itemId metadata following what codex does</span></span>
-<span class="source-line"><span class="source-line-number">1582</span><span class="source-line-text">          if (</span></span>
-<span class="source-line"><span class="source-line-number">1583</span><span class="source-line-text">            (model.api.npm === &quot;@ai-sdk/openai&quot; || model.api.npm === &quot;@ai-sdk/azure&quot;) &amp;&amp;</span></span>
-<span class="source-line"><span class="source-line-number">1584</span><span class="source-line-text">            opts.body &amp;&amp;</span></span>
-<span class="source-line"><span class="source-line-number">1585</span><span class="source-line-text">            opts.method === &quot;POST&quot;</span></span>
-<span class="source-line"><span class="source-line-number">1586</span><span class="source-line-text">          ) {</span></span>
-<span class="source-line"><span class="source-line-number">1587</span><span class="source-line-text">            const body = JSON.parse(opts.body as string)</span></span>
-<span class="source-line"><span class="source-line-number">1588</span><span class="source-line-text">            const keepIds = body.store === true</span></span>
-<span class="source-line"><span class="source-line-number">1589</span><span class="source-line-text">            if (!keepIds &amp;&amp; Array.isArray(body.input)) {</span></span>
-<span class="source-line"><span class="source-line-number">1590</span><span class="source-line-text">              for (const item of body.input) {</span></span>
-<span class="source-line"><span class="source-line-number">1591</span><span class="source-line-text">                if (&quot;id&quot; in item) {</span></span>
-<span class="source-line"><span class="source-line-number">1592</span><span class="source-line-text">                  delete item.id</span></span>
-<span class="source-line"><span class="source-line-number">1593</span><span class="source-line-text">                }</span></span>
-<span class="source-line"><span class="source-line-number">1594</span><span class="source-line-text">              }</span></span>
-<span class="source-line"><span class="source-line-number">1595</span><span class="source-line-text">              opts.body = JSON.stringify(body)</span></span>
-<span class="source-line"><span class="source-line-number">1596</span><span class="source-line-text">            }</span></span>
-<span class="source-line"><span class="source-line-number">1597</span><span class="source-line-text">          }</span></span>
-<span class="source-line"><span class="source-line-number">1598</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1599</span><span class="source-line-text">          const res = await fetchFn(input, {</span></span>
-<span class="source-line"><span class="source-line-number">1600</span><span class="source-line-text">            ...opts,</span></span>
-<span class="source-line"><span class="source-line-number">1601</span><span class="source-line-text">            // @ts-ignore see here: https://github.com/oven-sh/bun/issues/16682</span></span>
-<span class="source-line"><span class="source-line-number">1602</span><span class="source-line-text">            timeout: false,</span></span>
-<span class="source-line"><span class="source-line-number">1603</span><span class="source-line-text">          })</span></span>
-<span class="source-line"><span class="source-line-number">1604</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1605</span><span class="source-line-text">          if (!chunkAbortCtl) return res</span></span>
-<span class="source-line"><span class="source-line-number">1606</span><span class="source-line-text">          return wrapSSE(res, chunkTimeout, chunkAbortCtl)</span></span>
-<span class="source-line"><span class="source-line-number">1607</span><span class="source-line-text">        }</span></span>
-<span class="source-line"><span class="source-line-number">1608</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1609</span><span class="source-line-text">        const bundledLoader = BUNDLED_PROVIDERS[model.api.npm]</span></span>
-<span class="source-line"><span class="source-line-number">1610</span><span class="source-line-text">        if (bundledLoader) {</span></span>
-<span class="source-line"><span class="source-line-number">1611</span><span class="source-line-text">          log.info(&quot;using bundled provider&quot;, {</span></span>
-<span class="source-line"><span class="source-line-number">1612</span><span class="source-line-text">            providerID: model.providerID,</span></span>
-<span class="source-line"><span class="source-line-number">1613</span><span class="source-line-text">            pkg: model.api.npm,</span></span>
-<span class="source-line"><span class="source-line-number">1614</span><span class="source-line-text">          })</span></span>
-<span class="source-line"><span class="source-line-number">1615</span><span class="source-line-text">          const factory = await bundledLoader()</span></span>
-<span class="source-line"><span class="source-line-number">1616</span><span class="source-line-text">          const loaded = factory({</span></span>
-<span class="source-line"><span class="source-line-number">1617</span><span class="source-line-text">            name: model.providerID,</span></span>
-<span class="source-line"><span class="source-line-number">1618</span><span class="source-line-text">            ...options,</span></span>
-<span class="source-line"><span class="source-line-number">1619</span><span class="source-line-text">          })</span></span>
-<span class="source-line"><span class="source-line-number">1620</span><span class="source-line-text">          s.sdk.set(key, loaded)</span></span>
-<span class="source-line"><span class="source-line-number">1621</span><span class="source-line-text">          return loaded as SDK</span></span>
-<span class="source-line"><span class="source-line-number">1622</span><span class="source-line-text">        }</span></span>
-<span class="source-line"><span class="source-line-number">1623</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1624</span><span class="source-line-text">        let installedPath: string</span></span>
-<span class="source-line"><span class="source-line-number">1625</span><span class="source-line-text">        if (!model.api.npm.startsWith(&quot;file://&quot;)) {</span></span>
-<span class="source-line"><span class="source-line-number">1626</span><span class="source-line-text">          const item = await Npm.add(model.api.npm)</span></span>
-<span class="source-line"><span class="source-line-number">1627</span><span class="source-line-text">          if (!item.entrypoint) throw new Error(`Package ${model.api.npm} has no import entrypoint`)</span></span>
-<span class="source-line"><span class="source-line-number">1628</span><span class="source-line-text">          installedPath = item.entrypoint</span></span>
-<span class="source-line"><span class="source-line-number">1629</span><span class="source-line-text">        } else {</span></span>
-<span class="source-line"><span class="source-line-number">1630</span><span class="source-line-text">          log.info(&quot;loading local provider&quot;, { pkg: model.api.npm })</span></span>
-<span class="source-line"><span class="source-line-number">1631</span><span class="source-line-text">          installedPath = model.api.npm</span></span>
-<span class="source-line"><span class="source-line-number">1632</span><span class="source-line-text">        }</span></span>
-<span class="source-line"><span class="source-line-number">1633</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1634</span><span class="source-line-text">        // `installedPath` is a local entry path or an existing `file://` URL. Normalize</span></span>
-<span class="source-line"><span class="source-line-number">1635</span><span class="source-line-text">        // only path inputs so Node on Windows accepts the dynamic import.</span></span>
-<span class="source-line"><span class="source-line-number">1636</span><span class="source-line-text">        const importSpec = installedPath.startsWith(&quot;file://&quot;) ? installedPath : pathToFileURL(installedPath).href</span></span>
-<span class="source-line"><span class="source-line-number">1637</span><span class="source-line-text">        const mod = await import(importSpec)</span></span>
-<span class="source-line"><span class="source-line-number">1638</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1639</span><span class="source-line-text">        const fn = mod[Object.keys(mod).find((key) =&gt; key.startsWith(&quot;create&quot;))!]</span></span>
-<span class="source-line"><span class="source-line-number">1640</span><span class="source-line-text">        const loaded = fn({</span></span>
-<span class="source-line"><span class="source-line-number">1641</span><span class="source-line-text">          name: model.providerID,</span></span>
-<span class="source-line"><span class="source-line-number">1642</span><span class="source-line-text">          ...options,</span></span>
-<span class="source-line"><span class="source-line-number">1643</span><span class="source-line-text">        })</span></span>
-<span class="source-line"><span class="source-line-number">1644</span><span class="source-line-text">        s.sdk.set(key, loaded)</span></span>
-<span class="source-line"><span class="source-line-number">1645</span><span class="source-line-text">        return loaded as SDK</span></span>
-<span class="source-line"><span class="source-line-number">1646</span><span class="source-line-text">      } catch (e) {</span></span>
-<span class="source-line"><span class="source-line-number">1647</span><span class="source-line-text">        throw new InitError({ providerID: model.providerID, cause: e })</span></span>
-<span class="source-line"><span class="source-line-number">1648</span><span class="source-line-text">      }</span></span>
-<span class="source-line"><span class="source-line-number">1649</span><span class="source-line-text">    }</span></span></code></pre>
-</details>：provider SDK 动态加载和缓存。
-12. <details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/provider/transform.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/provider/transform.ts:429-474</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">429</span><span class="source-line-text">export function message(msgs: ModelMessage[], model: Provider.Model, options: Record&lt;string, unknown&gt;) {</span></span>
-<span class="source-line"><span class="source-line-number">430</span><span class="source-line-text">  msgs = unsupportedParts(msgs, model)</span></span>
-<span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">  msgs = normalizeMessages(msgs, model, options)</span></span>
-<span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">  if (</span></span>
-<span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">    (model.providerID === &quot;anthropic&quot; ||</span></span>
-<span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">      model.providerID === &quot;google-vertex-anthropic&quot; ||</span></span>
-<span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">      model.api.id.includes(&quot;anthropic&quot;) ||</span></span>
-<span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">      model.api.id.includes(&quot;claude&quot;) ||</span></span>
-<span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">      model.id.includes(&quot;anthropic&quot;) ||</span></span>
-<span class="source-line"><span class="source-line-number">438</span><span class="source-line-text">      model.id.includes(&quot;claude&quot;) ||</span></span>
-<span class="source-line"><span class="source-line-number">439</span><span class="source-line-text">      model.api.npm === &quot;@ai-sdk/anthropic&quot; ||</span></span>
-<span class="source-line"><span class="source-line-number">440</span><span class="source-line-text">      model.api.npm === &quot;@ai-sdk/alibaba&quot;) &amp;&amp;</span></span>
-<span class="source-line"><span class="source-line-number">441</span><span class="source-line-text">    model.api.npm !== &quot;@ai-sdk/gateway&quot;</span></span>
-<span class="source-line"><span class="source-line-number">442</span><span class="source-line-text">  ) {</span></span>
-<span class="source-line"><span class="source-line-number">443</span><span class="source-line-text">    msgs = applyCaching(msgs, model)</span></span>
-<span class="source-line"><span class="source-line-number">444</span><span class="source-line-text">  }</span></span>
-<span class="source-line"><span class="source-line-number">445</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">446</span><span class="source-line-text">  // Remap providerOptions keys from stored providerID to expected SDK key</span></span>
-<span class="source-line"><span class="source-line-number">447</span><span class="source-line-text">  const key = sdkKey(model.api.npm)</span></span>
-<span class="source-line"><span class="source-line-number">448</span><span class="source-line-text">  if (key &amp;&amp; key !== model.providerID) {</span></span>
-<span class="source-line"><span class="source-line-number">449</span><span class="source-line-text">    const remap = (opts: Record&lt;string, any&gt; | undefined) =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">450</span><span class="source-line-text">      if (!opts) return opts</span></span>
-<span class="source-line"><span class="source-line-number">451</span><span class="source-line-text">      if (!(model.providerID in opts)) return opts</span></span>
-<span class="source-line"><span class="source-line-number">452</span><span class="source-line-text">      const result = { ...opts }</span></span>
-<span class="source-line"><span class="source-line-number">453</span><span class="source-line-text">      result[key] = result[model.providerID]</span></span>
-<span class="source-line"><span class="source-line-number">454</span><span class="source-line-text">      delete result[model.providerID]</span></span>
-<span class="source-line"><span class="source-line-number">455</span><span class="source-line-text">      return result</span></span>
-<span class="source-line"><span class="source-line-number">456</span><span class="source-line-text">    }</span></span>
-<span class="source-line"><span class="source-line-number">457</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">458</span><span class="source-line-text">    msgs = msgs.map((msg) =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">459</span><span class="source-line-text">      if (!Array.isArray(msg.content)) return { ...msg, providerOptions: remap(msg.providerOptions) }</span></span>
-<span class="source-line"><span class="source-line-number">460</span><span class="source-line-text">      return {</span></span>
-<span class="source-line"><span class="source-line-number">461</span><span class="source-line-text">        ...msg,</span></span>
-<span class="source-line"><span class="source-line-number">462</span><span class="source-line-text">        providerOptions: remap(msg.providerOptions),</span></span>
-<span class="source-line"><span class="source-line-number">463</span><span class="source-line-text">        content: msg.content.map((part) =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">464</span><span class="source-line-text">          if (part.type === &quot;tool-approval-request&quot; || part.type === &quot;tool-approval-response&quot;) {</span></span>
-<span class="source-line"><span class="source-line-number">465</span><span class="source-line-text">            return { ...part }</span></span>
-<span class="source-line"><span class="source-line-number">466</span><span class="source-line-text">          }</span></span>
-<span class="source-line"><span class="source-line-number">467</span><span class="source-line-text">          return { ...part, providerOptions: remap(part.providerOptions) }</span></span>
-<span class="source-line"><span class="source-line-number">468</span><span class="source-line-text">        }),</span></span>
-<span class="source-line"><span class="source-line-number">469</span><span class="source-line-text">      } as typeof msg</span></span>
-<span class="source-line"><span class="source-line-number">470</span><span class="source-line-text">    })</span></span>
-<span class="source-line"><span class="source-line-number">471</span><span class="source-line-text">  }</span></span>
-<span class="source-line"><span class="source-line-number">472</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">473</span><span class="source-line-text">  return msgs</span></span>
-<span class="source-line"><span class="source-line-number">474</span><span class="source-line-text">}</span></span></code></pre>
-</details>：消息兼容转换入口。
+1. `packages/opencode/src/session/llm.ts:39-60`：`StreamInput` 和 LLM service interface。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:39-60</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">39</span><span class="source-line-text">export type StreamInput = {</span></span>
+  <span class="source-line"><span class="source-line-number">40</span><span class="source-line-text">  user: MessageV2.User</span></span>
+  <span class="source-line"><span class="source-line-number">41</span><span class="source-line-text">  sessionID: string</span></span>
+  <span class="source-line"><span class="source-line-number">42</span><span class="source-line-text">  parentSessionID?: string</span></span>
+  <span class="source-line"><span class="source-line-number">43</span><span class="source-line-text">  model: Provider.Model</span></span>
+  <span class="source-line"><span class="source-line-number">44</span><span class="source-line-text">  agent: Agent.Info</span></span>
+  <span class="source-line"><span class="source-line-number">45</span><span class="source-line-text">  permission?: Permission.Ruleset</span></span>
+  <span class="source-line"><span class="source-line-number">46</span><span class="source-line-text">  system: string[]</span></span>
+  <span class="source-line"><span class="source-line-number">47</span><span class="source-line-text">  messages: ModelMessage[]</span></span>
+  <span class="source-line"><span class="source-line-number">48</span><span class="source-line-text">  small?: boolean</span></span>
+  <span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  tools: Record&lt;string, Tool&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">  retries?: number</span></span>
+  <span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  toolChoice?: &quot;auto&quot; | &quot;required&quot; | &quot;none&quot;</span></span>
+  <span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">}</span></span>
+  <span class="source-line"><span class="source-line-number">53</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">export type StreamRequest = StreamInput &amp; {</span></span>
+  <span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  abort: AbortSignal</span></span>
+  <span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">}</span></span>
+  <span class="source-line"><span class="source-line-number">57</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">58</span><span class="source-line-text">export interface Interface {</span></span>
+  <span class="source-line"><span class="source-line-number">59</span><span class="source-line-text">  readonly stream: (input: StreamInput) =&gt; Stream.Stream&lt;LLMEvent, unknown&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">60</span><span class="source-line-text">}</span></span></code></pre>
+  </details>
+
+2. `packages/opencode/src/session/llm.ts:99-107`：并发取 language model、config、provider、auth。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:99-107</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">      const [language, cfg, item, info] = yield* Effect.all(</span></span>
+  <span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">        [</span></span>
+  <span class="source-line"><span class="source-line-number">101</span><span class="source-line-text">          provider.getLanguage(input.model),</span></span>
+  <span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">          config.get(),</span></span>
+  <span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">          provider.getProvider(input.model.providerID),</span></span>
+  <span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">          auth.get(input.model.providerID),</span></span>
+  <span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">        ],</span></span>
+  <span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">        { concurrency: &quot;unbounded&quot; },</span></span>
+  <span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">      )</span></span></code></pre>
+  </details>
+
+3. `packages/opencode/src/session/llm.ts:112-168`：拼 system prompt 和 messages。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:112-168</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">      const system: string[] = []</span></span>
+  <span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">      system.push(</span></span>
+  <span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">        [</span></span>
+  <span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">          // use agent prompt otherwise provider prompt</span></span>
+  <span class="source-line"><span class="source-line-number">116</span><span class="source-line-text">          ...(input.agent.prompt ? [input.agent.prompt] : SystemPrompt.provider(input.model)),</span></span>
+  <span class="source-line"><span class="source-line-number">117</span><span class="source-line-text">          // any custom prompt passed into this call</span></span>
+  <span class="source-line"><span class="source-line-number">118</span><span class="source-line-text">          ...input.system,</span></span>
+  <span class="source-line"><span class="source-line-number">119</span><span class="source-line-text">          // any custom prompt from last user message</span></span>
+  <span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">          ...(input.user.system ? [input.user.system] : []),</span></span>
+  <span class="source-line"><span class="source-line-number">121</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">122</span><span class="source-line-text">          .filter((x) =&gt; x)</span></span>
+  <span class="source-line"><span class="source-line-number">123</span><span class="source-line-text">          .join(&quot;\n&quot;),</span></span>
+  <span class="source-line"><span class="source-line-number">124</span><span class="source-line-text">      )</span></span>
+  <span class="source-line"><span class="source-line-number">125</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">      const header = system[0]</span></span>
+  <span class="source-line"><span class="source-line-number">127</span><span class="source-line-text">      yield* plugin.trigger(</span></span>
+  <span class="source-line"><span class="source-line-number">128</span><span class="source-line-text">        &quot;experimental.chat.system.transform&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">        { sessionID: input.sessionID, model: input.model },</span></span>
+  <span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">        { system },</span></span>
+  <span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">      )</span></span>
+  <span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">      // rejoin to maintain 2-part structure for caching if header unchanged</span></span>
+  <span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">      if (system.length &gt; 2 &amp;&amp; system[0] === header) {</span></span>
+  <span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">        const rest = system.slice(1)</span></span>
+  <span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">        system.length = 0</span></span>
+  <span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">        system.push(header, rest.join(&quot;\n&quot;))</span></span>
+  <span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">      }</span></span>
+  <span class="source-line"><span class="source-line-number">138</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">139</span><span class="source-line-text">      const variant =</span></span>
+  <span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">        !input.small &amp;&amp; input.model.variants &amp;&amp; input.user.model.variant</span></span>
+  <span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">          ? input.model.variants[input.user.model.variant]</span></span>
+  <span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">          : {}</span></span>
+  <span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">      const base = input.small</span></span>
+  <span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">        ? ProviderTransform.smallOptions(input.model)</span></span>
+  <span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">        : ProviderTransform.options({</span></span>
+  <span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">            model: input.model,</span></span>
+  <span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">            sessionID: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">148</span><span class="source-line-text">            providerOptions: item.options,</span></span>
+  <span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">          })</span></span>
+  <span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">      const options = mergeOptions(mergeOptions(mergeOptions(base, input.model.options), input.agent.options), variant)</span></span>
+  <span class="source-line"><span class="source-line-number">151</span><span class="source-line-text">      if (isOpenaiOauth) {</span></span>
+  <span class="source-line"><span class="source-line-number">152</span><span class="source-line-text">        options.instructions = system.join(&quot;\n&quot;)</span></span>
+  <span class="source-line"><span class="source-line-number">153</span><span class="source-line-text">      }</span></span>
+  <span class="source-line"><span class="source-line-number">154</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">155</span><span class="source-line-text">      const isWorkflow = language instanceof GitLabWorkflowLanguageModel</span></span>
+  <span class="source-line"><span class="source-line-number">156</span><span class="source-line-text">      const messages = isOpenaiOauth</span></span>
+  <span class="source-line"><span class="source-line-number">157</span><span class="source-line-text">        ? input.messages</span></span>
+  <span class="source-line"><span class="source-line-number">158</span><span class="source-line-text">        : isWorkflow</span></span>
+  <span class="source-line"><span class="source-line-number">159</span><span class="source-line-text">          ? input.messages</span></span>
+  <span class="source-line"><span class="source-line-number">160</span><span class="source-line-text">          : [</span></span>
+  <span class="source-line"><span class="source-line-number">161</span><span class="source-line-text">              ...system.map(</span></span>
+  <span class="source-line"><span class="source-line-number">162</span><span class="source-line-text">                (x): ModelMessage =&gt; ({</span></span>
+  <span class="source-line"><span class="source-line-number">163</span><span class="source-line-text">                  role: &quot;system&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">164</span><span class="source-line-text">                  content: x,</span></span>
+  <span class="source-line"><span class="source-line-number">165</span><span class="source-line-text">                }),</span></span>
+  <span class="source-line"><span class="source-line-number">166</span><span class="source-line-text">              ),</span></span>
+  <span class="source-line"><span class="source-line-number">167</span><span class="source-line-text">              ...input.messages,</span></span>
+  <span class="source-line"><span class="source-line-number">168</span><span class="source-line-text">            ]</span></span></code></pre>
+  </details>
+
+4. `packages/opencode/src/session/llm.ts:170-204`：插件改写参数、headers，并解析 tools。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:170-204</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">170</span><span class="source-line-text">      const params = yield* plugin.trigger(</span></span>
+  <span class="source-line"><span class="source-line-number">171</span><span class="source-line-text">        &quot;chat.params&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">172</span><span class="source-line-text">        {</span></span>
+  <span class="source-line"><span class="source-line-number">173</span><span class="source-line-text">          sessionID: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">174</span><span class="source-line-text">          agent: input.agent.name,</span></span>
+  <span class="source-line"><span class="source-line-number">175</span><span class="source-line-text">          model: input.model,</span></span>
+  <span class="source-line"><span class="source-line-number">176</span><span class="source-line-text">          provider: item,</span></span>
+  <span class="source-line"><span class="source-line-number">177</span><span class="source-line-text">          message: input.user,</span></span>
+  <span class="source-line"><span class="source-line-number">178</span><span class="source-line-text">        },</span></span>
+  <span class="source-line"><span class="source-line-number">179</span><span class="source-line-text">        {</span></span>
+  <span class="source-line"><span class="source-line-number">180</span><span class="source-line-text">          temperature: input.model.capabilities.temperature</span></span>
+  <span class="source-line"><span class="source-line-number">181</span><span class="source-line-text">            ? (input.agent.temperature ?? ProviderTransform.temperature(input.model))</span></span>
+  <span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">            : undefined,</span></span>
+  <span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">          topP: input.agent.topP ?? ProviderTransform.topP(input.model),</span></span>
+  <span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">          topK: ProviderTransform.topK(input.model),</span></span>
+  <span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">          maxOutputTokens: ProviderTransform.maxOutputTokens(input.model, flags.outputTokenMax),</span></span>
+  <span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">          options,</span></span>
+  <span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">        },</span></span>
+  <span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      )</span></span>
+  <span class="source-line"><span class="source-line-number">189</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">190</span><span class="source-line-text">      const { headers } = yield* plugin.trigger(</span></span>
+  <span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">        &quot;chat.headers&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">        {</span></span>
+  <span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">          sessionID: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">          agent: input.agent.name,</span></span>
+  <span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">          model: input.model,</span></span>
+  <span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">          provider: item,</span></span>
+  <span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">          message: input.user,</span></span>
+  <span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">        },</span></span>
+  <span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">        {</span></span>
+  <span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">          headers: {},</span></span>
+  <span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">        },</span></span>
+  <span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">      )</span></span>
+  <span class="source-line"><span class="source-line-number">203</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      const tools = resolveTools(input)</span></span></code></pre>
+  </details>
+
+5. `packages/opencode/src/session/llm.ts:204-225`、`packages/opencode/src/session/llm.ts:512-518`：按权限和用户设置过滤 tools。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:204-225</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      const tools = resolveTools(input)</span></span>
+  <span class="source-line"><span class="source-line-number">205</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      // GitHub Copilot may require the tools parameter when message history contains</span></span>
+  <span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">      // tool calls but no tools are active (e.g. compaction). Inject a stub tool that</span></span>
+  <span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">      // is never meant to be invoked. LiteLLM-backed providers are excluded.</span></span>
+  <span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">      if (</span></span>
+  <span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">        input.model.providerID.includes(&quot;github-copilot&quot;) &amp;&amp;</span></span>
+  <span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">        Object.keys(tools).length === 0 &amp;&amp;</span></span>
+  <span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">        hasToolCalls(input.messages)</span></span>
+  <span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">      ) {</span></span>
+  <span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">        tools[&quot;_noop&quot;] = aiTool({</span></span>
+  <span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">          description: &quot;Do not call this tool. It exists only for API compatibility and must never be invoked.&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">          inputSchema: jsonSchema({</span></span>
+  <span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">            type: &quot;object&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">            properties: {</span></span>
+  <span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">              reason: { type: &quot;string&quot;, description: &quot;Unused&quot; },</span></span>
+  <span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">            },</span></span>
+  <span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">          execute: async () =&gt; ({ output: &quot;&quot;, title: &quot;&quot;, metadata: {} }),</span></span>
+  <span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">        })</span></span>
+  <span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">      }</span></span>
+  <span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">      const sortedTools = Object.fromEntries(Object.entries(tools).toSorted(([a], [b]) =&gt; a.localeCompare(b)))</span></span></code></pre>
+  </details>
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:512-518</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">512</span><span class="source-line-text">function resolveTools(input: Pick&lt;StreamInput, &quot;tools&quot; | &quot;agent&quot; | &quot;permission&quot; | &quot;user&quot;&gt;) {</span></span>
+  <span class="source-line"><span class="source-line-number">513</span><span class="source-line-text">  const disabled = Permission.disabled(</span></span>
+  <span class="source-line"><span class="source-line-number">514</span><span class="source-line-text">    Object.keys(input.tools),</span></span>
+  <span class="source-line"><span class="source-line-number">515</span><span class="source-line-text">    Permission.merge(input.agent.permission, input.permission ?? []),</span></span>
+  <span class="source-line"><span class="source-line-number">516</span><span class="source-line-text">  )</span></span>
+  <span class="source-line"><span class="source-line-number">517</span><span class="source-line-text">  return Record.filter(input.tools, (_, k) =&gt; input.user.tools?.[k] !== false &amp;&amp; !disabled.has(k))</span></span>
+  <span class="source-line"><span class="source-line-number">518</span><span class="source-line-text">}</span></span></code></pre>
+  </details>
+
+6. `packages/opencode/src/session/llm.ts:330-350`：构造 request headers。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:330-350</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">330</span><span class="source-line-text">      const opencodeProjectID = input.model.providerID.startsWith(&quot;opencode&quot;)</span></span>
+  <span class="source-line"><span class="source-line-number">331</span><span class="source-line-text">        ? (yield* InstanceState.context).project.id</span></span>
+  <span class="source-line"><span class="source-line-number">332</span><span class="source-line-text">        : undefined</span></span>
+  <span class="source-line"><span class="source-line-number">333</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">334</span><span class="source-line-text">      const requestHeaders = {</span></span>
+  <span class="source-line"><span class="source-line-number">335</span><span class="source-line-text">        ...(input.model.providerID.startsWith(&quot;opencode&quot;)</span></span>
+  <span class="source-line"><span class="source-line-number">336</span><span class="source-line-text">          ? {</span></span>
+  <span class="source-line"><span class="source-line-number">337</span><span class="source-line-text">              ...(opencodeProjectID ? { &quot;x-opencode-project&quot;: opencodeProjectID } : {}),</span></span>
+  <span class="source-line"><span class="source-line-number">338</span><span class="source-line-text">              &quot;x-opencode-session&quot;: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">339</span><span class="source-line-text">              &quot;x-opencode-request&quot;: input.user.id,</span></span>
+  <span class="source-line"><span class="source-line-number">340</span><span class="source-line-text">              &quot;x-opencode-client&quot;: flags.client,</span></span>
+  <span class="source-line"><span class="source-line-number">341</span><span class="source-line-text">              &quot;User-Agent&quot;: `opencode/${InstallationVersion}`,</span></span>
+  <span class="source-line"><span class="source-line-number">342</span><span class="source-line-text">            }</span></span>
+  <span class="source-line"><span class="source-line-number">343</span><span class="source-line-text">          : {</span></span>
+  <span class="source-line"><span class="source-line-number">344</span><span class="source-line-text">              &quot;x-session-affinity&quot;: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">345</span><span class="source-line-text">              ...(input.parentSessionID ? { &quot;x-parent-session-id&quot;: input.parentSessionID } : {}),</span></span>
+  <span class="source-line"><span class="source-line-number">346</span><span class="source-line-text">              &quot;User-Agent&quot;: `opencode/${InstallationVersion}`,</span></span>
+  <span class="source-line"><span class="source-line-number">347</span><span class="source-line-text">            }),</span></span>
+  <span class="source-line"><span class="source-line-number">348</span><span class="source-line-text">        ...input.model.headers,</span></span>
+  <span class="source-line"><span class="source-line-number">349</span><span class="source-line-text">        ...headers,</span></span>
+  <span class="source-line"><span class="source-line-number">350</span><span class="source-line-text">      }</span></span></code></pre>
+  </details>
+
+7. `packages/opencode/src/session/llm.ts:352-392`：尝试 native runtime，否则回退 AI SDK。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:352-392</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">352</span><span class="source-line-text">      if (flags.experimentalNativeLlm) {</span></span>
+  <span class="source-line"><span class="source-line-number">353</span><span class="source-line-text">        const native = LLMNativeRuntime.stream({</span></span>
+  <span class="source-line"><span class="source-line-number">354</span><span class="source-line-text">          model: input.model,</span></span>
+  <span class="source-line"><span class="source-line-number">355</span><span class="source-line-text">          provider: item,</span></span>
+  <span class="source-line"><span class="source-line-number">356</span><span class="source-line-text">          auth: info,</span></span>
+  <span class="source-line"><span class="source-line-number">357</span><span class="source-line-text">          llmClient,</span></span>
+  <span class="source-line"><span class="source-line-number">358</span><span class="source-line-text">          isOpenaiOauth,</span></span>
+  <span class="source-line"><span class="source-line-number">359</span><span class="source-line-text">          system,</span></span>
+  <span class="source-line"><span class="source-line-number">360</span><span class="source-line-text">          messages,</span></span>
+  <span class="source-line"><span class="source-line-number">361</span><span class="source-line-text">          tools: sortedTools,</span></span>
+  <span class="source-line"><span class="source-line-number">362</span><span class="source-line-text">          toolChoice: input.toolChoice,</span></span>
+  <span class="source-line"><span class="source-line-number">363</span><span class="source-line-text">          temperature: params.temperature,</span></span>
+  <span class="source-line"><span class="source-line-number">364</span><span class="source-line-text">          topP: params.topP,</span></span>
+  <span class="source-line"><span class="source-line-number">365</span><span class="source-line-text">          topK: params.topK,</span></span>
+  <span class="source-line"><span class="source-line-number">366</span><span class="source-line-text">          maxOutputTokens: params.maxOutputTokens,</span></span>
+  <span class="source-line"><span class="source-line-number">367</span><span class="source-line-text">          providerOptions: params.options,</span></span>
+  <span class="source-line"><span class="source-line-number">368</span><span class="source-line-text">          headers: requestHeaders,</span></span>
+  <span class="source-line"><span class="source-line-number">369</span><span class="source-line-text">          abort: input.abort,</span></span>
+  <span class="source-line"><span class="source-line-number">370</span><span class="source-line-text">        })</span></span>
+  <span class="source-line"><span class="source-line-number">371</span><span class="source-line-text">        if (native.type === &quot;supported&quot;) {</span></span>
+  <span class="source-line"><span class="source-line-number">372</span><span class="source-line-text">          yield* Effect.logInfo(&quot;llm runtime selected&quot;).pipe(</span></span>
+  <span class="source-line"><span class="source-line-number">373</span><span class="source-line-text">            Effect.annotateLogs({</span></span>
+  <span class="source-line"><span class="source-line-number">374</span><span class="source-line-text">              &quot;llm.runtime&quot;: &quot;native&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">375</span><span class="source-line-text">              &quot;llm.provider&quot;: input.model.providerID,</span></span>
+  <span class="source-line"><span class="source-line-number">376</span><span class="source-line-text">              &quot;llm.model&quot;: input.model.id,</span></span>
+  <span class="source-line"><span class="source-line-number">377</span><span class="source-line-text">            }),</span></span>
+  <span class="source-line"><span class="source-line-number">378</span><span class="source-line-text">          )</span></span>
+  <span class="source-line"><span class="source-line-number">379</span><span class="source-line-text">          return {</span></span>
+  <span class="source-line"><span class="source-line-number">380</span><span class="source-line-text">            type: &quot;native&quot; as const,</span></span>
+  <span class="source-line"><span class="source-line-number">381</span><span class="source-line-text">            stream: native.stream,</span></span>
+  <span class="source-line"><span class="source-line-number">382</span><span class="source-line-text">          }</span></span>
+  <span class="source-line"><span class="source-line-number">383</span><span class="source-line-text">        }</span></span>
+  <span class="source-line"><span class="source-line-number">384</span><span class="source-line-text">        yield* Effect.logInfo(&quot;llm runtime selected&quot;).pipe(</span></span>
+  <span class="source-line"><span class="source-line-number">385</span><span class="source-line-text">          Effect.annotateLogs({</span></span>
+  <span class="source-line"><span class="source-line-number">386</span><span class="source-line-text">            &quot;llm.runtime&quot;: &quot;ai-sdk&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">387</span><span class="source-line-text">            &quot;llm.provider&quot;: input.model.providerID,</span></span>
+  <span class="source-line"><span class="source-line-number">388</span><span class="source-line-text">            &quot;llm.model&quot;: input.model.id,</span></span>
+  <span class="source-line"><span class="source-line-number">389</span><span class="source-line-text">            &quot;llm.native_unsupported_reason&quot;: native.reason,</span></span>
+  <span class="source-line"><span class="source-line-number">390</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">391</span><span class="source-line-text">        )</span></span>
+  <span class="source-line"><span class="source-line-number">392</span><span class="source-line-text">        l.info(&quot;native runtime unavailable; falling back to ai-sdk&quot;, { reason: native.reason })</span></span></code></pre>
+  </details>
+
+8. `packages/opencode/src/session/llm.ts:402-467`：调用 `streamText`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:402-467</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">402</span><span class="source-line-text">      return {</span></span>
+  <span class="source-line"><span class="source-line-number">403</span><span class="source-line-text">        type: &quot;ai-sdk&quot; as const,</span></span>
+  <span class="source-line"><span class="source-line-number">404</span><span class="source-line-text">        result: streamText({</span></span>
+  <span class="source-line"><span class="source-line-number">405</span><span class="source-line-text">          onError(error) {</span></span>
+  <span class="source-line"><span class="source-line-number">406</span><span class="source-line-text">            l.error(&quot;stream error&quot;, {</span></span>
+  <span class="source-line"><span class="source-line-number">407</span><span class="source-line-text">              error,</span></span>
+  <span class="source-line"><span class="source-line-number">408</span><span class="source-line-text">            })</span></span>
+  <span class="source-line"><span class="source-line-number">409</span><span class="source-line-text">          },</span></span>
+  <span class="source-line"><span class="source-line-number">410</span><span class="source-line-text">          async experimental_repairToolCall(failed) {</span></span>
+  <span class="source-line"><span class="source-line-number">411</span><span class="source-line-text">            const lower = failed.toolCall.toolName.toLowerCase()</span></span>
+  <span class="source-line"><span class="source-line-number">412</span><span class="source-line-text">            if (lower !== failed.toolCall.toolName &amp;&amp; sortedTools[lower]) {</span></span>
+  <span class="source-line"><span class="source-line-number">413</span><span class="source-line-text">              l.info(&quot;repairing tool call&quot;, {</span></span>
+  <span class="source-line"><span class="source-line-number">414</span><span class="source-line-text">                tool: failed.toolCall.toolName,</span></span>
+  <span class="source-line"><span class="source-line-number">415</span><span class="source-line-text">                repaired: lower,</span></span>
+  <span class="source-line"><span class="source-line-number">416</span><span class="source-line-text">              })</span></span>
+  <span class="source-line"><span class="source-line-number">417</span><span class="source-line-text">              return {</span></span>
+  <span class="source-line"><span class="source-line-number">418</span><span class="source-line-text">                ...failed.toolCall,</span></span>
+  <span class="source-line"><span class="source-line-number">419</span><span class="source-line-text">                toolName: lower,</span></span>
+  <span class="source-line"><span class="source-line-number">420</span><span class="source-line-text">              }</span></span>
+  <span class="source-line"><span class="source-line-number">421</span><span class="source-line-text">            }</span></span>
+  <span class="source-line"><span class="source-line-number">422</span><span class="source-line-text">            return {</span></span>
+  <span class="source-line"><span class="source-line-number">423</span><span class="source-line-text">              ...failed.toolCall,</span></span>
+  <span class="source-line"><span class="source-line-number">424</span><span class="source-line-text">              input: JSON.stringify({</span></span>
+  <span class="source-line"><span class="source-line-number">425</span><span class="source-line-text">                tool: failed.toolCall.toolName,</span></span>
+  <span class="source-line"><span class="source-line-number">426</span><span class="source-line-text">                error: failed.error.message,</span></span>
+  <span class="source-line"><span class="source-line-number">427</span><span class="source-line-text">              }),</span></span>
+  <span class="source-line"><span class="source-line-number">428</span><span class="source-line-text">              toolName: &quot;invalid&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">429</span><span class="source-line-text">            }</span></span>
+  <span class="source-line"><span class="source-line-number">430</span><span class="source-line-text">          },</span></span>
+  <span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">          temperature: params.temperature,</span></span>
+  <span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">          topP: params.topP,</span></span>
+  <span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">          topK: params.topK,</span></span>
+  <span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">          providerOptions: ProviderTransform.providerOptions(input.model, params.options),</span></span>
+  <span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">          activeTools: Object.keys(sortedTools).filter((x) =&gt; x !== &quot;invalid&quot;),</span></span>
+  <span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">          tools: sortedTools,</span></span>
+  <span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">          toolChoice: input.toolChoice,</span></span>
+  <span class="source-line"><span class="source-line-number">438</span><span class="source-line-text">          maxOutputTokens: params.maxOutputTokens,</span></span>
+  <span class="source-line"><span class="source-line-number">439</span><span class="source-line-text">          abortSignal: input.abort,</span></span>
+  <span class="source-line"><span class="source-line-number">440</span><span class="source-line-text">          headers: requestHeaders,</span></span>
+  <span class="source-line"><span class="source-line-number">441</span><span class="source-line-text">          maxRetries: input.retries ?? 0,</span></span>
+  <span class="source-line"><span class="source-line-number">442</span><span class="source-line-text">          messages,</span></span>
+  <span class="source-line"><span class="source-line-number">443</span><span class="source-line-text">          model: wrapLanguageModel({</span></span>
+  <span class="source-line"><span class="source-line-number">444</span><span class="source-line-text">            model: language,</span></span>
+  <span class="source-line"><span class="source-line-number">445</span><span class="source-line-text">            middleware: [</span></span>
+  <span class="source-line"><span class="source-line-number">446</span><span class="source-line-text">              {</span></span>
+  <span class="source-line"><span class="source-line-number">447</span><span class="source-line-text">                specificationVersion: &quot;v3&quot; as const,</span></span>
+  <span class="source-line"><span class="source-line-number">448</span><span class="source-line-text">                async transformParams(args) {</span></span>
+  <span class="source-line"><span class="source-line-number">449</span><span class="source-line-text">                  if (args.type === &quot;stream&quot;) {</span></span>
+  <span class="source-line"><span class="source-line-number">450</span><span class="source-line-text">                    // @ts-expect-error</span></span>
+  <span class="source-line"><span class="source-line-number">451</span><span class="source-line-text">                    args.params.prompt = ProviderTransform.message(args.params.prompt, input.model, options)</span></span>
+  <span class="source-line"><span class="source-line-number">452</span><span class="source-line-text">                  }</span></span>
+  <span class="source-line"><span class="source-line-number">453</span><span class="source-line-text">                  return args.params</span></span>
+  <span class="source-line"><span class="source-line-number">454</span><span class="source-line-text">                },</span></span>
+  <span class="source-line"><span class="source-line-number">455</span><span class="source-line-text">              },</span></span>
+  <span class="source-line"><span class="source-line-number">456</span><span class="source-line-text">            ],</span></span>
+  <span class="source-line"><span class="source-line-number">457</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">458</span><span class="source-line-text">          experimental_telemetry: {</span></span>
+  <span class="source-line"><span class="source-line-number">459</span><span class="source-line-text">            isEnabled: cfg.experimental?.openTelemetry,</span></span>
+  <span class="source-line"><span class="source-line-number">460</span><span class="source-line-text">            functionId: &quot;session.llm&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">461</span><span class="source-line-text">            tracer: telemetryTracer,</span></span>
+  <span class="source-line"><span class="source-line-number">462</span><span class="source-line-text">            metadata: {</span></span>
+  <span class="source-line"><span class="source-line-number">463</span><span class="source-line-text">              userId: cfg.username ?? &quot;unknown&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">464</span><span class="source-line-text">              sessionId: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">465</span><span class="source-line-text">            },</span></span>
+  <span class="source-line"><span class="source-line-number">466</span><span class="source-line-text">          },</span></span>
+  <span class="source-line"><span class="source-line-number">467</span><span class="source-line-text">        }),</span></span></code></pre>
+  </details>
+
+9. `packages/opencode/src/session/llm.ts:471-493`：把 AI SDK fullStream 转成 Effect stream。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:471-493</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">471</span><span class="source-line-text">    const stream: Interface[&quot;stream&quot;] = (input) =&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">472</span><span class="source-line-text">      Stream.scoped(</span></span>
+  <span class="source-line"><span class="source-line-number">473</span><span class="source-line-text">        Stream.unwrap(</span></span>
+  <span class="source-line"><span class="source-line-number">474</span><span class="source-line-text">          Effect.gen(function* () {</span></span>
+  <span class="source-line"><span class="source-line-number">475</span><span class="source-line-text">            const ctrl = yield* Effect.acquireRelease(</span></span>
+  <span class="source-line"><span class="source-line-number">476</span><span class="source-line-text">              Effect.sync(() =&gt; new AbortController()),</span></span>
+  <span class="source-line"><span class="source-line-number">477</span><span class="source-line-text">              (ctrl) =&gt; Effect.sync(() =&gt; ctrl.abort()),</span></span>
+  <span class="source-line"><span class="source-line-number">478</span><span class="source-line-text">            )</span></span>
+  <span class="source-line"><span class="source-line-number">479</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">480</span><span class="source-line-text">            const result = yield* run({ ...input, abort: ctrl.signal })</span></span>
+  <span class="source-line"><span class="source-line-number">481</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">482</span><span class="source-line-text">            if (result.type === &quot;native&quot;) return result.stream</span></span>
+  <span class="source-line"><span class="source-line-number">483</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">484</span><span class="source-line-text">            const state = LLMAISDK.adapterState()</span></span>
+  <span class="source-line"><span class="source-line-number">485</span><span class="source-line-text">            return Stream.fromAsyncIterable(result.result.fullStream, (e) =&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">486</span><span class="source-line-text">              e instanceof Error ? e : new Error(String(e)),</span></span>
+  <span class="source-line"><span class="source-line-number">487</span><span class="source-line-text">            ).pipe(</span></span>
+  <span class="source-line"><span class="source-line-number">488</span><span class="source-line-text">              Stream.mapEffect((event) =&gt; LLMAISDK.toLLMEvents(state, event)),</span></span>
+  <span class="source-line"><span class="source-line-number">489</span><span class="source-line-text">              Stream.flatMap((events) =&gt; Stream.fromIterable(events)),</span></span>
+  <span class="source-line"><span class="source-line-number">490</span><span class="source-line-text">            )</span></span>
+  <span class="source-line"><span class="source-line-number">491</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">492</span><span class="source-line-text">        ),</span></span>
+  <span class="source-line"><span class="source-line-number">493</span><span class="source-line-text">      )</span></span></code></pre>
+  </details>
+
+10. `packages/opencode/src/session/llm/ai-sdk.ts:61-236`：把 AI SDK event 转成 `LLMEvent`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm/ai-sdk.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm/ai-sdk.ts:61-236</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">61</span><span class="source-line-text">export function toLLMEvents(</span></span>
+  <span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">  state: ReturnType&lt;typeof adapterState&gt;,</span></span>
+  <span class="source-line"><span class="source-line-number">63</span><span class="source-line-text">  event: AISDKEvent,</span></span>
+  <span class="source-line"><span class="source-line-number">64</span><span class="source-line-text">): Effect.Effect&lt;ReadonlyArray&lt;LLMEvent&gt;, unknown&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">65</span><span class="source-line-text">  switch (event.type) {</span></span>
+  <span class="source-line"><span class="source-line-number">66</span><span class="source-line-text">    case &quot;start&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">67</span><span class="source-line-text">      return Effect.succeed([])</span></span>
+  <span class="source-line"><span class="source-line-number">68</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">69</span><span class="source-line-text">    case &quot;start-step&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">70</span><span class="source-line-text">      return Effect.succeed([LLMEvent.stepStart({ index: state.step })])</span></span>
+  <span class="source-line"><span class="source-line-number">71</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">72</span><span class="source-line-text">    case &quot;finish-step&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">73</span><span class="source-line-text">      return Effect.sync(() =&gt; [</span></span>
+  <span class="source-line"><span class="source-line-number">74</span><span class="source-line-text">        LLMEvent.stepFinish({</span></span>
+  <span class="source-line"><span class="source-line-number">75</span><span class="source-line-text">          index: state.step++,</span></span>
+  <span class="source-line"><span class="source-line-number">76</span><span class="source-line-text">          reason: finishReason(event.finishReason),</span></span>
+  <span class="source-line"><span class="source-line-number">77</span><span class="source-line-text">          usage: usage(event.usage),</span></span>
+  <span class="source-line"><span class="source-line-number">78</span><span class="source-line-text">          providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">79</span><span class="source-line-text">        }),</span></span>
+  <span class="source-line"><span class="source-line-number">80</span><span class="source-line-text">      ])</span></span>
+  <span class="source-line"><span class="source-line-number">81</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">82</span><span class="source-line-text">    case &quot;finish&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">83</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">84</span><span class="source-line-text">        const events = [</span></span>
+  <span class="source-line"><span class="source-line-number">85</span><span class="source-line-text">          LLMEvent.finish({</span></span>
+  <span class="source-line"><span class="source-line-number">86</span><span class="source-line-text">            reason: finishReason(event.finishReason),</span></span>
+  <span class="source-line"><span class="source-line-number">87</span><span class="source-line-text">            usage: usage(event.totalUsage),</span></span>
+  <span class="source-line"><span class="source-line-number">88</span><span class="source-line-text">            providerMetadata: &quot;providerMetadata&quot; in event ? providerMetadata(event.providerMetadata) : undefined,</span></span>
+  <span class="source-line"><span class="source-line-number">89</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">90</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">91</span><span class="source-line-text">        // Reset so the adapter can be reused for a follow-up stream without leaking</span></span>
+  <span class="source-line"><span class="source-line-number">92</span><span class="source-line-text">        // counters or block IDs. adapterState() is the single source of truth for shape.</span></span>
+  <span class="source-line"><span class="source-line-number">93</span><span class="source-line-text">        Object.assign(state, adapterState())</span></span>
+  <span class="source-line"><span class="source-line-number">94</span><span class="source-line-text">        return events</span></span>
+  <span class="source-line"><span class="source-line-number">95</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">96</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">97</span><span class="source-line-text">    case &quot;text-start&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">98</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">        state.currentTextID = currentTextID(state, event.id)</span></span>
+  <span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">        return [</span></span>
+  <span class="source-line"><span class="source-line-number">101</span><span class="source-line-text">          LLMEvent.textStart({</span></span>
+  <span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">            id: state.currentTextID,</span></span>
+  <span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">107</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">108</span><span class="source-line-text">    case &quot;text-delta&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">109</span><span class="source-line-text">      return Effect.succeed([</span></span>
+  <span class="source-line"><span class="source-line-number">110</span><span class="source-line-text">        LLMEvent.textDelta({</span></span>
+  <span class="source-line"><span class="source-line-number">111</span><span class="source-line-text">          id: currentTextID(state, event.id),</span></span>
+  <span class="source-line"><span class="source-line-number">112</span><span class="source-line-text">          text: event.text,</span></span>
+  <span class="source-line"><span class="source-line-number">113</span><span class="source-line-text">          providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">        }),</span></span>
+  <span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">      ])</span></span>
+  <span class="source-line"><span class="source-line-number">116</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">117</span><span class="source-line-text">    case &quot;text-end&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">118</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">119</span><span class="source-line-text">        const id = currentTextID(state, event.id)</span></span>
+  <span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">        state.currentTextID = undefined</span></span>
+  <span class="source-line"><span class="source-line-number">121</span><span class="source-line-text">        return [</span></span>
+  <span class="source-line"><span class="source-line-number">122</span><span class="source-line-text">          LLMEvent.textEnd({</span></span>
+  <span class="source-line"><span class="source-line-number">123</span><span class="source-line-text">            id,</span></span>
+  <span class="source-line"><span class="source-line-number">124</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">125</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">126</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">127</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">128</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">129</span><span class="source-line-text">    case &quot;reasoning-start&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">        state.currentReasoningID = currentReasoningID(state, event.id)</span></span>
+  <span class="source-line"><span class="source-line-number">132</span><span class="source-line-text">        return [</span></span>
+  <span class="source-line"><span class="source-line-number">133</span><span class="source-line-text">          LLMEvent.reasoningStart({</span></span>
+  <span class="source-line"><span class="source-line-number">134</span><span class="source-line-text">            id: state.currentReasoningID,</span></span>
+  <span class="source-line"><span class="source-line-number">135</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">136</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">137</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">138</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">139</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">140</span><span class="source-line-text">    case &quot;reasoning-delta&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">141</span><span class="source-line-text">      return Effect.succeed([</span></span>
+  <span class="source-line"><span class="source-line-number">142</span><span class="source-line-text">        LLMEvent.reasoningDelta({</span></span>
+  <span class="source-line"><span class="source-line-number">143</span><span class="source-line-text">          id: currentReasoningID(state, event.id),</span></span>
+  <span class="source-line"><span class="source-line-number">144</span><span class="source-line-text">          text: event.text,</span></span>
+  <span class="source-line"><span class="source-line-number">145</span><span class="source-line-text">          providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">146</span><span class="source-line-text">        }),</span></span>
+  <span class="source-line"><span class="source-line-number">147</span><span class="source-line-text">      ])</span></span>
+  <span class="source-line"><span class="source-line-number">148</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">149</span><span class="source-line-text">    case &quot;reasoning-end&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">150</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">151</span><span class="source-line-text">        const id = currentReasoningID(state, event.id)</span></span>
+  <span class="source-line"><span class="source-line-number">152</span><span class="source-line-text">        state.currentReasoningID = undefined</span></span>
+  <span class="source-line"><span class="source-line-number">153</span><span class="source-line-text">        return [</span></span>
+  <span class="source-line"><span class="source-line-number">154</span><span class="source-line-text">          LLMEvent.reasoningEnd({</span></span>
+  <span class="source-line"><span class="source-line-number">155</span><span class="source-line-text">            id,</span></span>
+  <span class="source-line"><span class="source-line-number">156</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">157</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">158</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">159</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">160</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">161</span><span class="source-line-text">    case &quot;tool-input-start&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">162</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">163</span><span class="source-line-text">        state.toolNames[event.id] = event.toolName</span></span>
+  <span class="source-line"><span class="source-line-number">164</span><span class="source-line-text">        return [</span></span>
+  <span class="source-line"><span class="source-line-number">165</span><span class="source-line-text">          LLMEvent.toolInputStart({</span></span>
+  <span class="source-line"><span class="source-line-number">166</span><span class="source-line-text">            id: event.id,</span></span>
+  <span class="source-line"><span class="source-line-number">167</span><span class="source-line-text">            name: event.toolName,</span></span>
+  <span class="source-line"><span class="source-line-number">168</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">169</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">170</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">171</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">172</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">173</span><span class="source-line-text">    case &quot;tool-input-delta&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">174</span><span class="source-line-text">      return Effect.succeed([</span></span>
+  <span class="source-line"><span class="source-line-number">175</span><span class="source-line-text">        LLMEvent.toolInputDelta({</span></span>
+  <span class="source-line"><span class="source-line-number">176</span><span class="source-line-text">          id: event.id,</span></span>
+  <span class="source-line"><span class="source-line-number">177</span><span class="source-line-text">          name: state.toolNames[event.id] ?? &quot;unknown&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">178</span><span class="source-line-text">          text: event.delta ?? &quot;&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">179</span><span class="source-line-text">        }),</span></span>
+  <span class="source-line"><span class="source-line-number">180</span><span class="source-line-text">      ])</span></span>
+  <span class="source-line"><span class="source-line-number">181</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">182</span><span class="source-line-text">    case &quot;tool-input-end&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">183</span><span class="source-line-text">      return Effect.succeed([</span></span>
+  <span class="source-line"><span class="source-line-number">184</span><span class="source-line-text">        LLMEvent.toolInputEnd({</span></span>
+  <span class="source-line"><span class="source-line-number">185</span><span class="source-line-text">          id: event.id,</span></span>
+  <span class="source-line"><span class="source-line-number">186</span><span class="source-line-text">          name: state.toolNames[event.id] ?? &quot;unknown&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">187</span><span class="source-line-text">          providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">        }),</span></span>
+  <span class="source-line"><span class="source-line-number">189</span><span class="source-line-text">      ])</span></span>
+  <span class="source-line"><span class="source-line-number">190</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">191</span><span class="source-line-text">    case &quot;tool-call&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">192</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">193</span><span class="source-line-text">        state.toolNames[event.toolCallId] = event.toolName</span></span>
+  <span class="source-line"><span class="source-line-number">194</span><span class="source-line-text">        return [</span></span>
+  <span class="source-line"><span class="source-line-number">195</span><span class="source-line-text">          LLMEvent.toolCall({</span></span>
+  <span class="source-line"><span class="source-line-number">196</span><span class="source-line-text">            id: event.toolCallId,</span></span>
+  <span class="source-line"><span class="source-line-number">197</span><span class="source-line-text">            name: event.toolName,</span></span>
+  <span class="source-line"><span class="source-line-number">198</span><span class="source-line-text">            input: event.input,</span></span>
+  <span class="source-line"><span class="source-line-number">199</span><span class="source-line-text">            providerExecuted: &quot;providerExecuted&quot; in event ? event.providerExecuted : undefined,</span></span>
+  <span class="source-line"><span class="source-line-number">200</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">201</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">203</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">204</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">205</span><span class="source-line-text">    case &quot;tool-result&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">        const name = state.toolNames[event.toolCallId] ?? &quot;unknown&quot;</span></span>
+  <span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">        delete state.toolNames[event.toolCallId]</span></span>
+  <span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">        return [</span></span>
+  <span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">          LLMEvent.toolResult({</span></span>
+  <span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">            id: event.toolCallId,</span></span>
+  <span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">            name,</span></span>
+  <span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">            result: ToolResultValue.make(event.output),</span></span>
+  <span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">            providerExecuted: &quot;providerExecuted&quot; in event ? event.providerExecuted : undefined,</span></span>
+  <span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">219</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">    case &quot;tool-error&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">      return Effect.sync(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">        const name = state.toolNames[event.toolCallId] ?? (&quot;toolName&quot; in event ? event.toolName : &quot;unknown&quot;)</span></span>
+  <span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">        delete state.toolNames[event.toolCallId]</span></span>
+  <span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">        return [</span></span>
+  <span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">          LLMEvent.toolError({</span></span>
+  <span class="source-line"><span class="source-line-number">226</span><span class="source-line-text">            id: event.toolCallId,</span></span>
+  <span class="source-line"><span class="source-line-number">227</span><span class="source-line-text">            name,</span></span>
+  <span class="source-line"><span class="source-line-number">228</span><span class="source-line-text">            message: errorMessage(event.error),</span></span>
+  <span class="source-line"><span class="source-line-number">229</span><span class="source-line-text">            error: event.error,</span></span>
+  <span class="source-line"><span class="source-line-number">230</span><span class="source-line-text">            providerMetadata: providerMetadata(event.providerMetadata),</span></span>
+  <span class="source-line"><span class="source-line-number">231</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">232</span><span class="source-line-text">        ]</span></span>
+  <span class="source-line"><span class="source-line-number">233</span><span class="source-line-text">      })</span></span>
+  <span class="source-line"><span class="source-line-number">234</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">235</span><span class="source-line-text">    case &quot;error&quot;:</span></span>
+  <span class="source-line"><span class="source-line-number">236</span><span class="source-line-text">      return Effect.fail(event.error)</span></span></code></pre>
+  </details>
+
+11. `packages/opencode/src/provider/provider.ts:1508-1649`：provider SDK 动态加载和缓存。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1508-1649</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">1508</span><span class="source-line-text">    async function resolveSDK(model: Model, s: State, envs: Record&lt;string, string | undefined&gt;) {</span></span>
+  <span class="source-line"><span class="source-line-number">1509</span><span class="source-line-text">      try {</span></span>
+  <span class="source-line"><span class="source-line-number">1510</span><span class="source-line-text">        using _ = log.time(&quot;getSDK&quot;, {</span></span>
+  <span class="source-line"><span class="source-line-number">1511</span><span class="source-line-text">          providerID: model.providerID,</span></span>
+  <span class="source-line"><span class="source-line-number">1512</span><span class="source-line-text">        })</span></span>
+  <span class="source-line"><span class="source-line-number">1513</span><span class="source-line-text">        const provider = s.providers[model.providerID]</span></span>
+  <span class="source-line"><span class="source-line-number">1514</span><span class="source-line-text">        const options = { ...provider.options }</span></span>
+  <span class="source-line"><span class="source-line-number">1515</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1516</span><span class="source-line-text">        if (model.providerID === &quot;google-vertex&quot; &amp;&amp; !model.api.npm.includes(&quot;@ai-sdk/openai-compatible&quot;)) {</span></span>
+  <span class="source-line"><span class="source-line-number">1517</span><span class="source-line-text">          delete options.fetch</span></span>
+  <span class="source-line"><span class="source-line-number">1518</span><span class="source-line-text">        }</span></span>
+  <span class="source-line"><span class="source-line-number">1519</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1520</span><span class="source-line-text">        if (model.api.npm.includes(&quot;@ai-sdk/openai-compatible&quot;) &amp;&amp; options[&quot;includeUsage&quot;] !== false) {</span></span>
+  <span class="source-line"><span class="source-line-number">1521</span><span class="source-line-text">          options[&quot;includeUsage&quot;] = true</span></span>
+  <span class="source-line"><span class="source-line-number">1522</span><span class="source-line-text">        }</span></span>
+  <span class="source-line"><span class="source-line-number">1523</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1524</span><span class="source-line-text">        const baseURL = iife(() =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">1525</span><span class="source-line-text">          let url =</span></span>
+  <span class="source-line"><span class="source-line-number">1526</span><span class="source-line-text">            typeof options[&quot;baseURL&quot;] === &quot;string&quot; &amp;&amp; options[&quot;baseURL&quot;] !== &quot;&quot; ? options[&quot;baseURL&quot;] : model.api.url</span></span>
+  <span class="source-line"><span class="source-line-number">1527</span><span class="source-line-text">          if (!url) return</span></span>
+  <span class="source-line"><span class="source-line-number">1528</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1529</span><span class="source-line-text">          const loader = s.varsLoaders[model.providerID]</span></span>
+  <span class="source-line"><span class="source-line-number">1530</span><span class="source-line-text">          if (loader) {</span></span>
+  <span class="source-line"><span class="source-line-number">1531</span><span class="source-line-text">            const vars = loader(options)</span></span>
+  <span class="source-line"><span class="source-line-number">1532</span><span class="source-line-text">            for (const [key, value] of Object.entries(vars)) {</span></span>
+  <span class="source-line"><span class="source-line-number">1533</span><span class="source-line-text">              const field = &quot;${&quot; + key + &quot;}&quot;</span></span>
+  <span class="source-line"><span class="source-line-number">1534</span><span class="source-line-text">              url = url.replaceAll(field, value)</span></span>
+  <span class="source-line"><span class="source-line-number">1535</span><span class="source-line-text">            }</span></span>
+  <span class="source-line"><span class="source-line-number">1536</span><span class="source-line-text">          }</span></span>
+  <span class="source-line"><span class="source-line-number">1537</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1538</span><span class="source-line-text">          url = url.replace(/\$\{([^}]+)\}/g, (item, key) =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">1539</span><span class="source-line-text">            const val = envs[String(key)]</span></span>
+  <span class="source-line"><span class="source-line-number">1540</span><span class="source-line-text">            return val ?? item</span></span>
+  <span class="source-line"><span class="source-line-number">1541</span><span class="source-line-text">          })</span></span>
+  <span class="source-line"><span class="source-line-number">1542</span><span class="source-line-text">          return url</span></span>
+  <span class="source-line"><span class="source-line-number">1543</span><span class="source-line-text">        })</span></span>
+  <span class="source-line"><span class="source-line-number">1544</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1545</span><span class="source-line-text">        if (baseURL !== undefined) options[&quot;baseURL&quot;] = baseURL</span></span>
+  <span class="source-line"><span class="source-line-number">1546</span><span class="source-line-text">        if (options[&quot;apiKey&quot;] === undefined &amp;&amp; provider.key) options[&quot;apiKey&quot;] = provider.key</span></span>
+  <span class="source-line"><span class="source-line-number">1547</span><span class="source-line-text">        if (model.headers)</span></span>
+  <span class="source-line"><span class="source-line-number">1548</span><span class="source-line-text">          options[&quot;headers&quot;] = {</span></span>
+  <span class="source-line"><span class="source-line-number">1549</span><span class="source-line-text">            ...options[&quot;headers&quot;],</span></span>
+  <span class="source-line"><span class="source-line-number">1550</span><span class="source-line-text">            ...model.headers,</span></span>
+  <span class="source-line"><span class="source-line-number">1551</span><span class="source-line-text">          }</span></span>
+  <span class="source-line"><span class="source-line-number">1552</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1553</span><span class="source-line-text">        const key = Hash.fast(</span></span>
+  <span class="source-line"><span class="source-line-number">1554</span><span class="source-line-text">          JSON.stringify({</span></span>
+  <span class="source-line"><span class="source-line-number">1555</span><span class="source-line-text">            providerID: model.providerID,</span></span>
+  <span class="source-line"><span class="source-line-number">1556</span><span class="source-line-text">            npm: model.api.npm,</span></span>
+  <span class="source-line"><span class="source-line-number">1557</span><span class="source-line-text">            options,</span></span>
+  <span class="source-line"><span class="source-line-number">1558</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">1559</span><span class="source-line-text">        )</span></span>
+  <span class="source-line"><span class="source-line-number">1560</span><span class="source-line-text">        const existing = s.sdk.get(key)</span></span>
+  <span class="source-line"><span class="source-line-number">1561</span><span class="source-line-text">        if (existing) return existing</span></span>
+  <span class="source-line"><span class="source-line-number">1562</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1563</span><span class="source-line-text">        const customFetch = options[&quot;fetch&quot;]</span></span>
+  <span class="source-line"><span class="source-line-number">1564</span><span class="source-line-text">        const chunkTimeout = options[&quot;chunkTimeout&quot;]</span></span>
+  <span class="source-line"><span class="source-line-number">1565</span><span class="source-line-text">        delete options[&quot;chunkTimeout&quot;]</span></span>
+  <span class="source-line"><span class="source-line-number">1566</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1567</span><span class="source-line-text">        options[&quot;fetch&quot;] = async (input: any, init?: BunFetchRequestInit) =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">1568</span><span class="source-line-text">          const fetchFn = customFetch ?? fetch</span></span>
+  <span class="source-line"><span class="source-line-number">1569</span><span class="source-line-text">          const opts = init ?? {}</span></span>
+  <span class="source-line"><span class="source-line-number">1570</span><span class="source-line-text">          const chunkAbortCtl = typeof chunkTimeout === &quot;number&quot; &amp;&amp; chunkTimeout &gt; 0 ? new AbortController() : undefined</span></span>
+  <span class="source-line"><span class="source-line-number">1571</span><span class="source-line-text">          const signals: AbortSignal[] = []</span></span>
+  <span class="source-line"><span class="source-line-number">1572</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1573</span><span class="source-line-text">          if (opts.signal) signals.push(opts.signal)</span></span>
+  <span class="source-line"><span class="source-line-number">1574</span><span class="source-line-text">          if (chunkAbortCtl) signals.push(chunkAbortCtl.signal)</span></span>
+  <span class="source-line"><span class="source-line-number">1575</span><span class="source-line-text">          if (options[&quot;timeout&quot;] !== undefined &amp;&amp; options[&quot;timeout&quot;] !== null &amp;&amp; options[&quot;timeout&quot;] !== false)</span></span>
+  <span class="source-line"><span class="source-line-number">1576</span><span class="source-line-text">            signals.push(AbortSignal.timeout(options[&quot;timeout&quot;]))</span></span>
+  <span class="source-line"><span class="source-line-number">1577</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1578</span><span class="source-line-text">          const combined = signals.length === 0 ? null : signals.length === 1 ? signals[0] : AbortSignal.any(signals)</span></span>
+  <span class="source-line"><span class="source-line-number">1579</span><span class="source-line-text">          if (combined) opts.signal = combined</span></span>
+  <span class="source-line"><span class="source-line-number">1580</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1581</span><span class="source-line-text">          // Strip openai itemId metadata following what codex does</span></span>
+  <span class="source-line"><span class="source-line-number">1582</span><span class="source-line-text">          if (</span></span>
+  <span class="source-line"><span class="source-line-number">1583</span><span class="source-line-text">            (model.api.npm === &quot;@ai-sdk/openai&quot; || model.api.npm === &quot;@ai-sdk/azure&quot;) &amp;&amp;</span></span>
+  <span class="source-line"><span class="source-line-number">1584</span><span class="source-line-text">            opts.body &amp;&amp;</span></span>
+  <span class="source-line"><span class="source-line-number">1585</span><span class="source-line-text">            opts.method === &quot;POST&quot;</span></span>
+  <span class="source-line"><span class="source-line-number">1586</span><span class="source-line-text">          ) {</span></span>
+  <span class="source-line"><span class="source-line-number">1587</span><span class="source-line-text">            const body = JSON.parse(opts.body as string)</span></span>
+  <span class="source-line"><span class="source-line-number">1588</span><span class="source-line-text">            const keepIds = body.store === true</span></span>
+  <span class="source-line"><span class="source-line-number">1589</span><span class="source-line-text">            if (!keepIds &amp;&amp; Array.isArray(body.input)) {</span></span>
+  <span class="source-line"><span class="source-line-number">1590</span><span class="source-line-text">              for (const item of body.input) {</span></span>
+  <span class="source-line"><span class="source-line-number">1591</span><span class="source-line-text">                if (&quot;id&quot; in item) {</span></span>
+  <span class="source-line"><span class="source-line-number">1592</span><span class="source-line-text">                  delete item.id</span></span>
+  <span class="source-line"><span class="source-line-number">1593</span><span class="source-line-text">                }</span></span>
+  <span class="source-line"><span class="source-line-number">1594</span><span class="source-line-text">              }</span></span>
+  <span class="source-line"><span class="source-line-number">1595</span><span class="source-line-text">              opts.body = JSON.stringify(body)</span></span>
+  <span class="source-line"><span class="source-line-number">1596</span><span class="source-line-text">            }</span></span>
+  <span class="source-line"><span class="source-line-number">1597</span><span class="source-line-text">          }</span></span>
+  <span class="source-line"><span class="source-line-number">1598</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1599</span><span class="source-line-text">          const res = await fetchFn(input, {</span></span>
+  <span class="source-line"><span class="source-line-number">1600</span><span class="source-line-text">            ...opts,</span></span>
+  <span class="source-line"><span class="source-line-number">1601</span><span class="source-line-text">            // @ts-ignore see here: https://github.com/oven-sh/bun/issues/16682</span></span>
+  <span class="source-line"><span class="source-line-number">1602</span><span class="source-line-text">            timeout: false,</span></span>
+  <span class="source-line"><span class="source-line-number">1603</span><span class="source-line-text">          })</span></span>
+  <span class="source-line"><span class="source-line-number">1604</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1605</span><span class="source-line-text">          if (!chunkAbortCtl) return res</span></span>
+  <span class="source-line"><span class="source-line-number">1606</span><span class="source-line-text">          return wrapSSE(res, chunkTimeout, chunkAbortCtl)</span></span>
+  <span class="source-line"><span class="source-line-number">1607</span><span class="source-line-text">        }</span></span>
+  <span class="source-line"><span class="source-line-number">1608</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1609</span><span class="source-line-text">        const bundledLoader = BUNDLED_PROVIDERS[model.api.npm]</span></span>
+  <span class="source-line"><span class="source-line-number">1610</span><span class="source-line-text">        if (bundledLoader) {</span></span>
+  <span class="source-line"><span class="source-line-number">1611</span><span class="source-line-text">          log.info(&quot;using bundled provider&quot;, {</span></span>
+  <span class="source-line"><span class="source-line-number">1612</span><span class="source-line-text">            providerID: model.providerID,</span></span>
+  <span class="source-line"><span class="source-line-number">1613</span><span class="source-line-text">            pkg: model.api.npm,</span></span>
+  <span class="source-line"><span class="source-line-number">1614</span><span class="source-line-text">          })</span></span>
+  <span class="source-line"><span class="source-line-number">1615</span><span class="source-line-text">          const factory = await bundledLoader()</span></span>
+  <span class="source-line"><span class="source-line-number">1616</span><span class="source-line-text">          const loaded = factory({</span></span>
+  <span class="source-line"><span class="source-line-number">1617</span><span class="source-line-text">            name: model.providerID,</span></span>
+  <span class="source-line"><span class="source-line-number">1618</span><span class="source-line-text">            ...options,</span></span>
+  <span class="source-line"><span class="source-line-number">1619</span><span class="source-line-text">          })</span></span>
+  <span class="source-line"><span class="source-line-number">1620</span><span class="source-line-text">          s.sdk.set(key, loaded)</span></span>
+  <span class="source-line"><span class="source-line-number">1621</span><span class="source-line-text">          return loaded as SDK</span></span>
+  <span class="source-line"><span class="source-line-number">1622</span><span class="source-line-text">        }</span></span>
+  <span class="source-line"><span class="source-line-number">1623</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1624</span><span class="source-line-text">        let installedPath: string</span></span>
+  <span class="source-line"><span class="source-line-number">1625</span><span class="source-line-text">        if (!model.api.npm.startsWith(&quot;file://&quot;)) {</span></span>
+  <span class="source-line"><span class="source-line-number">1626</span><span class="source-line-text">          const item = await Npm.add(model.api.npm)</span></span>
+  <span class="source-line"><span class="source-line-number">1627</span><span class="source-line-text">          if (!item.entrypoint) throw new Error(`Package ${model.api.npm} has no import entrypoint`)</span></span>
+  <span class="source-line"><span class="source-line-number">1628</span><span class="source-line-text">          installedPath = item.entrypoint</span></span>
+  <span class="source-line"><span class="source-line-number">1629</span><span class="source-line-text">        } else {</span></span>
+  <span class="source-line"><span class="source-line-number">1630</span><span class="source-line-text">          log.info(&quot;loading local provider&quot;, { pkg: model.api.npm })</span></span>
+  <span class="source-line"><span class="source-line-number">1631</span><span class="source-line-text">          installedPath = model.api.npm</span></span>
+  <span class="source-line"><span class="source-line-number">1632</span><span class="source-line-text">        }</span></span>
+  <span class="source-line"><span class="source-line-number">1633</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1634</span><span class="source-line-text">        // `installedPath` is a local entry path or an existing `file://` URL. Normalize</span></span>
+  <span class="source-line"><span class="source-line-number">1635</span><span class="source-line-text">        // only path inputs so Node on Windows accepts the dynamic import.</span></span>
+  <span class="source-line"><span class="source-line-number">1636</span><span class="source-line-text">        const importSpec = installedPath.startsWith(&quot;file://&quot;) ? installedPath : pathToFileURL(installedPath).href</span></span>
+  <span class="source-line"><span class="source-line-number">1637</span><span class="source-line-text">        const mod = await import(importSpec)</span></span>
+  <span class="source-line"><span class="source-line-number">1638</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1639</span><span class="source-line-text">        const fn = mod[Object.keys(mod).find((key) =&gt; key.startsWith(&quot;create&quot;))!]</span></span>
+  <span class="source-line"><span class="source-line-number">1640</span><span class="source-line-text">        const loaded = fn({</span></span>
+  <span class="source-line"><span class="source-line-number">1641</span><span class="source-line-text">          name: model.providerID,</span></span>
+  <span class="source-line"><span class="source-line-number">1642</span><span class="source-line-text">          ...options,</span></span>
+  <span class="source-line"><span class="source-line-number">1643</span><span class="source-line-text">        })</span></span>
+  <span class="source-line"><span class="source-line-number">1644</span><span class="source-line-text">        s.sdk.set(key, loaded)</span></span>
+  <span class="source-line"><span class="source-line-number">1645</span><span class="source-line-text">        return loaded as SDK</span></span>
+  <span class="source-line"><span class="source-line-number">1646</span><span class="source-line-text">      } catch (e) {</span></span>
+  <span class="source-line"><span class="source-line-number">1647</span><span class="source-line-text">        throw new InitError({ providerID: model.providerID, cause: e })</span></span>
+  <span class="source-line"><span class="source-line-number">1648</span><span class="source-line-text">      }</span></span>
+  <span class="source-line"><span class="source-line-number">1649</span><span class="source-line-text">    }</span></span></code></pre>
+  </details>
+
+12. `packages/opencode/src/provider/transform.ts:429-474`：消息兼容转换入口。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/provider/transform.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/provider/transform.ts:429-474</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">429</span><span class="source-line-text">export function message(msgs: ModelMessage[], model: Provider.Model, options: Record&lt;string, unknown&gt;) {</span></span>
+  <span class="source-line"><span class="source-line-number">430</span><span class="source-line-text">  msgs = unsupportedParts(msgs, model)</span></span>
+  <span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">  msgs = normalizeMessages(msgs, model, options)</span></span>
+  <span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">  if (</span></span>
+  <span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">    (model.providerID === &quot;anthropic&quot; ||</span></span>
+  <span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">      model.providerID === &quot;google-vertex-anthropic&quot; ||</span></span>
+  <span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">      model.api.id.includes(&quot;anthropic&quot;) ||</span></span>
+  <span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">      model.api.id.includes(&quot;claude&quot;) ||</span></span>
+  <span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">      model.id.includes(&quot;anthropic&quot;) ||</span></span>
+  <span class="source-line"><span class="source-line-number">438</span><span class="source-line-text">      model.id.includes(&quot;claude&quot;) ||</span></span>
+  <span class="source-line"><span class="source-line-number">439</span><span class="source-line-text">      model.api.npm === &quot;@ai-sdk/anthropic&quot; ||</span></span>
+  <span class="source-line"><span class="source-line-number">440</span><span class="source-line-text">      model.api.npm === &quot;@ai-sdk/alibaba&quot;) &amp;&amp;</span></span>
+  <span class="source-line"><span class="source-line-number">441</span><span class="source-line-text">    model.api.npm !== &quot;@ai-sdk/gateway&quot;</span></span>
+  <span class="source-line"><span class="source-line-number">442</span><span class="source-line-text">  ) {</span></span>
+  <span class="source-line"><span class="source-line-number">443</span><span class="source-line-text">    msgs = applyCaching(msgs, model)</span></span>
+  <span class="source-line"><span class="source-line-number">444</span><span class="source-line-text">  }</span></span>
+  <span class="source-line"><span class="source-line-number">445</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">446</span><span class="source-line-text">  // Remap providerOptions keys from stored providerID to expected SDK key</span></span>
+  <span class="source-line"><span class="source-line-number">447</span><span class="source-line-text">  const key = sdkKey(model.api.npm)</span></span>
+  <span class="source-line"><span class="source-line-number">448</span><span class="source-line-text">  if (key &amp;&amp; key !== model.providerID) {</span></span>
+  <span class="source-line"><span class="source-line-number">449</span><span class="source-line-text">    const remap = (opts: Record&lt;string, any&gt; | undefined) =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">450</span><span class="source-line-text">      if (!opts) return opts</span></span>
+  <span class="source-line"><span class="source-line-number">451</span><span class="source-line-text">      if (!(model.providerID in opts)) return opts</span></span>
+  <span class="source-line"><span class="source-line-number">452</span><span class="source-line-text">      const result = { ...opts }</span></span>
+  <span class="source-line"><span class="source-line-number">453</span><span class="source-line-text">      result[key] = result[model.providerID]</span></span>
+  <span class="source-line"><span class="source-line-number">454</span><span class="source-line-text">      delete result[model.providerID]</span></span>
+  <span class="source-line"><span class="source-line-number">455</span><span class="source-line-text">      return result</span></span>
+  <span class="source-line"><span class="source-line-number">456</span><span class="source-line-text">    }</span></span>
+  <span class="source-line"><span class="source-line-number">457</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">458</span><span class="source-line-text">    msgs = msgs.map((msg) =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">459</span><span class="source-line-text">      if (!Array.isArray(msg.content)) return { ...msg, providerOptions: remap(msg.providerOptions) }</span></span>
+  <span class="source-line"><span class="source-line-number">460</span><span class="source-line-text">      return {</span></span>
+  <span class="source-line"><span class="source-line-number">461</span><span class="source-line-text">        ...msg,</span></span>
+  <span class="source-line"><span class="source-line-number">462</span><span class="source-line-text">        providerOptions: remap(msg.providerOptions),</span></span>
+  <span class="source-line"><span class="source-line-number">463</span><span class="source-line-text">        content: msg.content.map((part) =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">464</span><span class="source-line-text">          if (part.type === &quot;tool-approval-request&quot; || part.type === &quot;tool-approval-response&quot;) {</span></span>
+  <span class="source-line"><span class="source-line-number">465</span><span class="source-line-text">            return { ...part }</span></span>
+  <span class="source-line"><span class="source-line-number">466</span><span class="source-line-text">          }</span></span>
+  <span class="source-line"><span class="source-line-number">467</span><span class="source-line-text">          return { ...part, providerOptions: remap(part.providerOptions) }</span></span>
+  <span class="source-line"><span class="source-line-number">468</span><span class="source-line-text">        }),</span></span>
+  <span class="source-line"><span class="source-line-number">469</span><span class="source-line-text">      } as typeof msg</span></span>
+  <span class="source-line"><span class="source-line-number">470</span><span class="source-line-text">    })</span></span>
+  <span class="source-line"><span class="source-line-number">471</span><span class="source-line-text">  }</span></span>
+  <span class="source-line"><span class="source-line-number">472</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">473</span><span class="source-line-text">  return msgs</span></span>
+  <span class="source-line"><span class="source-line-number">474</span><span class="source-line-text">}</span></span></code></pre>
+  </details>
+
 
 ## 6. 用户输入到 agent 行动的整体链路
 
@@ -1380,7 +1439,9 @@ export type StreamInput = {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:39-52`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:39-52</code></span>
@@ -1401,6 +1462,7 @@ export type StreamInput = {
 <span class="source-line"><span class="source-line-number">52</span><span class="source-line-text">}</span></span></code></pre>
 </details>
 
+
 这里最重要的是 `tools: Record<string, Tool>` 和 `messages: ModelMessage[]`。模型 provider 层并不关心 session 存储细节，只关心“给模型的消息”和“模型可调用的工具”。
 
 ### 6.2 并发解析 provider、model client、配置和认证
@@ -1417,7 +1479,9 @@ const [language, cfg, item, info] = yield* Effect.all(
 )
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:99-107`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:99-107</code></span>
@@ -1432,6 +1496,7 @@ const [language, cfg, item, info] = yield* Effect.all(
 <span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">        { concurrency: &quot;unbounded&quot; },</span></span>
 <span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">      )</span></span></code></pre>
 </details>
+
 
 Java 类比：`CompletableFuture.allOf(getLanguage, getConfig, getProvider, getAuth)`。`language` 是真正会传给 AI SDK 的 language model；`item` 是 provider 配置；`info` 是认证信息。
 
@@ -1450,7 +1515,9 @@ system.push(
 )
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:112-124`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:112-124</code></span>
@@ -1470,6 +1537,7 @@ system.push(
 <span class="source-line"><span class="source-line-number">124</span><span class="source-line-text">      )</span></span></code></pre>
 </details>
 
+
 优先级可以这样理解：
 
 1. 如果 agent 自己有 prompt，用 agent prompt。
@@ -1487,7 +1555,9 @@ yield* plugin.trigger(
 )
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:126-131`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:126-131</code></span>
@@ -1499,6 +1569,7 @@ yield* plugin.trigger(
 <span class="source-line"><span class="source-line-number">130</span><span class="source-line-text">        { system },</span></span>
 <span class="source-line"><span class="source-line-number">131</span><span class="source-line-text">      )</span></span></code></pre>
 </details>
+
 
 ### 6.4 拼请求参数和 headers
 
@@ -1524,7 +1595,9 @@ const params = yield* plugin.trigger(
 )
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:170-188`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:170-188</code></span>
@@ -1550,6 +1623,7 @@ const params = yield* plugin.trigger(
 <span class="source-line"><span class="source-line-number">188</span><span class="source-line-text">      )</span></span></code></pre>
 </details>
 
+
 `chat.params` 是一个扩展点：插件可以修改 temperature、topP、maxOutputTokens 和 provider options。
 
 headers 也有 hook：
@@ -1570,7 +1644,9 @@ const { headers } = yield* plugin.trigger(
 )
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:190-202`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:190-202</code></span>
@@ -1590,6 +1666,7 @@ const { headers } = yield* plugin.trigger(
 <span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">      )</span></span></code></pre>
 </details>
 
+
 ### 6.5 过滤 tools
 
 ```ts
@@ -1602,7 +1679,9 @@ function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "permission" 
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:512-518`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:512-518</code></span>
@@ -1615,6 +1694,7 @@ function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "permission" 
 <span class="source-line"><span class="source-line-number">517</span><span class="source-line-text">  return Record.filter(input.tools, (_, k) =&gt; input.user.tools?.[k] !== false &amp;&amp; !disabled.has(k))</span></span>
 <span class="source-line"><span class="source-line-number">518</span><span class="source-line-text">}</span></span></code></pre>
 </details>
+
 
 这一步很重要：即使 `SessionTools.resolve` 准备了工具，到了 LLM 调用前仍会根据 agent permission、session permission、user message 里的 tools 开关过滤一次。
 
@@ -1671,7 +1751,9 @@ return {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:402-467`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:402-467</code></span>
@@ -1744,6 +1826,7 @@ return {
 <span class="source-line"><span class="source-line-number">467</span><span class="source-line-text">        }),</span></span></code></pre>
 </details>
 
+
 重点看四件事：
 
 - `tools` 和 `activeTools` 决定模型可见的工具。
@@ -1763,7 +1846,9 @@ return Stream.fromAsyncIterable(result.result.fullStream, (e) =>
 )
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:484-490`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:484-490</code></span>
@@ -1776,6 +1861,7 @@ return Stream.fromAsyncIterable(result.result.fullStream, (e) =>
 <span class="source-line"><span class="source-line-number">489</span><span class="source-line-text">              Stream.flatMap((events) =&gt; Stream.fromIterable(events)),</span></span>
 <span class="source-line"><span class="source-line-number">490</span><span class="source-line-text">            )</span></span></code></pre>
 </details>
+
 
 这一步把第三方 SDK 事件流变成 OpenCode 内部统一事件流。Processor 后面只需要处理 `LLMEvent`，不需要直接理解 AI SDK 的 fullStream 事件。
 
@@ -1791,7 +1877,9 @@ export interface Interface {
 export class Service extends Context.Service<Service, Interface>()("@opencode/LLM") {}
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:58-62`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:58-62</code></span>
@@ -1802,6 +1890,7 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/LL
 <span class="source-line"><span class="source-line-number">61</span><span class="source-line-text"></span></span>
 <span class="source-line"><span class="source-line-number">62</span><span class="source-line-text">export class Service extends Context.Service&lt;Service, Interface&gt;()(&quot;@opencode/LLM&quot;) {}</span></span></code></pre>
 </details>
+
 
 这就是 LLM 层对外暴露的能力：传入 `StreamInput`，得到 `Stream<LLMEvent>`。它不是返回一个完整字符串，而是返回事件流。
 
@@ -1822,7 +1911,9 @@ export interface Interface {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/provider.ts:989-1000`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:989-1000</code></span>
@@ -1840,6 +1931,7 @@ export interface Interface {
 <span class="source-line"><span class="source-line-number">999</span><span class="source-line-text">  readonly defaultModel: () =&gt; Effect.Effect&lt;{ providerID: ProviderID; modelID: ModelID }&gt;</span></span>
 <span class="source-line"><span class="source-line-number">1000</span><span class="source-line-text">}</span></span></code></pre>
 </details>
+
 
 Provider 层的关键不是“发请求”，而是管理 provider/model catalog、model lookup、SDK 加载、默认模型和模糊建议。
 
@@ -1870,7 +1962,9 @@ async function resolveSDK(model: Model, s: State, envs: Record<string, string | 
   })
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/provider.ts:1508-1543`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1508-1543</code></span>
@@ -1913,6 +2007,7 @@ async function resolveSDK(model: Model, s: State, envs: Record<string, string | 
 <span class="source-line"><span class="source-line-number">1543</span><span class="source-line-text">        })</span></span></code></pre>
 </details>
 
+
 这段说明 provider 的 baseURL 可以来自 provider options、model api url、custom vars loader 和环境变量替换。
 
 缓存和加载 SDK：
@@ -1940,7 +2035,9 @@ if (bundledLoader) {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/provider.ts:1553-1622`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1553-1622</code></span>
@@ -2017,6 +2114,7 @@ if (bundledLoader) {
 <span class="source-line"><span class="source-line-number">1622</span><span class="source-line-text">        }</span></span></code></pre>
 </details>
 
+
 如果不是 bundled provider，就安装/导入 npm 包：
 
 ```ts
@@ -2039,7 +2137,9 @@ const loaded = fn({
 })
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/provider.ts:1624-1645`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1624-1645</code></span>
@@ -2067,6 +2167,7 @@ const loaded = fn({
 <span class="source-line"><span class="source-line-number">1644</span><span class="source-line-text">        s.sdk.set(key, loaded)</span></span>
 <span class="source-line"><span class="source-line-number">1645</span><span class="source-line-text">        return loaded as SDK</span></span></code></pre>
 </details>
+
 
 Java 类比：这像一个运行时 `ServiceLoader` + Maven artifact resolver + client factory。TS 的 `await import(importSpec)` 是动态加载模块。
 
@@ -2097,7 +2198,9 @@ const getLanguage = Effect.fn("Provider.getLanguage")(function* (model: Model) {
 })
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/provider.ts:1679-1703`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1679-1703</code></span>
@@ -2128,6 +2231,7 @@ const getLanguage = Effect.fn("Provider.getLanguage")(function* (model: Model) {
 <span class="source-line"><span class="source-line-number">1702</span><span class="source-line-text">      )</span></span>
 <span class="source-line"><span class="source-line-number">1703</span><span class="source-line-text">    })</span></span></code></pre>
 </details>
+
 
 这说明同一个 provider/model 的 language model 会缓存，避免每次请求都重新创建 SDK client。
 
@@ -2160,7 +2264,9 @@ export function message(msgs: ModelMessage[], model: Provider.Model, options: Re
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/transform.ts:429-474`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/transform.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/transform.ts:429-474</code></span>
@@ -2213,6 +2319,7 @@ export function message(msgs: ModelMessage[], model: Provider.Model, options: Re
 <span class="source-line"><span class="source-line-number">474</span><span class="source-line-text">}</span></span></code></pre>
 </details>
 
+
 这段告诉我们：ProviderTransform 先处理不支持的多模态 part，再规范化消息，再对 Anthropic/Claude 类模型加 cache control，最后重映射 providerOptions key。
 
 ### 7.6 为什么 normalizeMessages 很复杂
@@ -2232,7 +2339,9 @@ if (model.api.npm === "@ai-sdk/anthropic") {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/transform.ts:125-152`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/transform.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/transform.ts:125-152</code></span>
@@ -2267,6 +2376,7 @@ if (model.api.npm === "@ai-sdk/anthropic") {
 <span class="source-line"><span class="source-line-number">152</span><span class="source-line-text">  }</span></span></code></pre>
 </details>
 
+
 还有 Claude tool id 清洗：
 
 ```ts
@@ -2289,7 +2399,9 @@ if (model.api.id.includes("claude")) {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/transform.ts:182-209`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/transform.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/transform.ts:182-209</code></span>
@@ -2324,6 +2436,7 @@ if (model.api.id.includes("claude")) {
 <span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">  }</span></span></code></pre>
 </details>
 
+
 这不是“业务逻辑”，而是真实 provider API 的兼容性成本。coding agent 的 LLM 层一定会积累这种适配代码。
 
 ### 7.7 LLMAISDK adapter：事件翻译
@@ -2341,7 +2454,9 @@ export function adapterState() {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm/ai-sdk.ts:9-18`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm/ai-sdk.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm/ai-sdk.ts:9-18</code></span>
@@ -2358,6 +2473,7 @@ export function adapterState() {
 <span class="source-line"><span class="source-line-number">18</span><span class="source-line-text">}</span></span></code></pre>
 </details>
 
+
 `adapterState` 用来记住当前 text/reasoning block id 和 toolCallId -> toolName 映射。
 
 文本事件：
@@ -2373,7 +2489,9 @@ case "text-delta":
   ])
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm/ai-sdk.ts:108-115`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm/ai-sdk.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm/ai-sdk.ts:108-115</code></span>
@@ -2387,6 +2505,7 @@ case "text-delta":
 <span class="source-line"><span class="source-line-number">114</span><span class="source-line-text">        }),</span></span>
 <span class="source-line"><span class="source-line-number">115</span><span class="source-line-text">      ])</span></span></code></pre>
 </details>
+
 
 工具事件：
 
@@ -2406,7 +2525,9 @@ case "tool-call":
   })
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm/ai-sdk.ts:191-203`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm/ai-sdk.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm/ai-sdk.ts:191-203</code></span>
@@ -2425,6 +2546,7 @@ case "tool-call":
 <span class="source-line"><span class="source-line-number">202</span><span class="source-line-text">        ]</span></span>
 <span class="source-line"><span class="source-line-number">203</span><span class="source-line-text">      })</span></span></code></pre>
 </details>
+
 
 工具结果事件：
 
@@ -2445,7 +2567,9 @@ case "tool-result":
   })
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm/ai-sdk.ts:205-218`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm/ai-sdk.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm/ai-sdk.ts:205-218</code></span>
@@ -2465,6 +2589,7 @@ case "tool-result":
 <span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">        ]</span></span>
 <span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">      })</span></span></code></pre>
 </details>
+
 
 ### 7.8 native runtime 分支
 
@@ -2497,7 +2622,9 @@ if (flags.experimentalNativeLlm) {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:352-383`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:352-383</code></span>
@@ -2536,7 +2663,10 @@ if (flags.experimentalNativeLlm) {
 <span class="source-line"><span class="source-line-number">383</span><span class="source-line-text">        }</span></span></code></pre>
 </details>
 
-native runtime 不是默认替代所有 provider，它先判断是否支持。`LLMNativeRuntime.status` 目前只支持 openai/opencode/anthropic 且 provider package 是 OpenAI 或 Anthropic，并且不支持 OAuth。来源：<details class="source-ref source-ref--inline">
+
+native runtime 不是默认替代所有 provider，它先判断是否支持。`LLMNativeRuntime.status` 目前只支持 openai/opencode/anthropic 且 provider package 是 OpenAI 或 Anthropic，并且不支持 OAuth。来源：`packages/opencode/src/session/llm/native-runtime.ts:39-56`。
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm/native-runtime.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm/native-runtime.ts:39-56</code></span>
@@ -2559,7 +2689,8 @@ native runtime 不是默认替代所有 provider，它先判断是否支持。`L
 <span class="source-line"><span class="source-line-number">54</span><span class="source-line-text">    baseURL: typeof input.provider.options.baseURL === &quot;string&quot; ? input.provider.options.baseURL : undefined,</span></span>
 <span class="source-line"><span class="source-line-number">55</span><span class="source-line-text">  }</span></span>
 <span class="source-line"><span class="source-line-number">56</span><span class="source-line-text">}</span></span></code></pre>
-</details>。
+</details>
+
 
 ## 8. 关键 TypeScript 语法复习
 
@@ -2569,13 +2700,16 @@ native runtime 不是默认替代所有 provider，它先判断是否支持。`L
 function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "permission" | "user">) {
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:512`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:512</code></span>
   </summary>
   <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">512</span><span class="source-line-text">function resolveTools(input: Pick&lt;StreamInput, &quot;tools&quot; | &quot;agent&quot; | &quot;permission&quot; | &quot;user&quot;&gt;) {</span></span></code></pre>
 </details>
+
 
 `Pick` 从大类型里挑出需要的字段。Java 没有内置等价物，通常会建一个小 DTO。这里表示 `resolveTools` 不应该依赖完整 `StreamInput`。
 
@@ -2585,13 +2719,16 @@ function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "permission" 
 tools: Record<string, Tool>
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:49`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:49</code></span>
   </summary>
   <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  tools: Record&lt;string, Tool&gt;</span></span></code></pre>
 </details>
+
 
 Java 类比：`Map<String, Tool>`。
 
@@ -2601,13 +2738,16 @@ Java 类比：`Map<String, Tool>`。
 toolChoice?: "auto" | "required" | "none"
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:51`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:51</code></span>
   </summary>
   <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">51</span><span class="source-line-text">  toolChoice?: &quot;auto&quot; | &quot;required&quot; | &quot;none&quot;</span></span></code></pre>
 </details>
+
 
 Java 类比 enum：`ToolChoice.AUTO / REQUIRED / NONE`，但 TS 可以直接用字符串字面量 union。
 
@@ -2619,7 +2759,9 @@ small?: boolean
 retries?: number
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:42-50`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:42-50</code></span>
@@ -2635,6 +2777,7 @@ retries?: number
 <span class="source-line"><span class="source-line-number">50</span><span class="source-line-text">  retries?: number</span></span></code></pre>
 </details>
 
+
 `?` 表示属性可能是 `undefined`。Java 类比 nullable field 或 `Optional`，但 TS 运行时没有自动检查。
 
 ### spread 和条件数组
@@ -2647,7 +2790,9 @@ retries?: number
 ]
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:115-120`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:115-120</code></span>
@@ -2660,6 +2805,7 @@ retries?: number
 <span class="source-line"><span class="source-line-number">120</span><span class="source-line-text">          ...(input.user.system ? [input.user.system] : []),</span></span></code></pre>
 </details>
 
+
 这是常见 TS/JS 写法：用 spread 把数组拼起来，用三元表达式决定加不加元素。
 
 ### dynamic import
@@ -2669,7 +2815,9 @@ const mod = await import(importSpec)
 const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/provider/provider.ts:1636-1640`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1636-1640</code></span>
@@ -2680,6 +2828,7 @@ const fn = mod[Object.keys(mod).find((key) => key.startsWith("create"))!]
 <span class="source-line"><span class="source-line-number">1639</span><span class="source-line-text">        const fn = mod[Object.keys(mod).find((key) =&gt; key.startsWith(&quot;create&quot;))!]</span></span>
 <span class="source-line"><span class="source-line-number">1640</span><span class="source-line-text">        const loaded = fn({</span></span></code></pre>
 </details>
+
 
 `!` 是 non-null assertion，告诉 TS “这里我确信不为 undefined”。Java 类比强行跳过空检查，风险是运行时如果找不到 create 函数会报错。
 
@@ -2692,7 +2841,9 @@ return {
 }
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:402-405`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:402-405</code></span>
@@ -2703,6 +2854,7 @@ return {
 <span class="source-line"><span class="source-line-number">405</span><span class="source-line-text">          onError(error) {</span></span></code></pre>
 </details>
 
+
 `as const` 把 `type` 收窄为字面量 `"ai-sdk"`，便于后面 `if (result.type === "native")` 做类型收窄。
 
 ### `Effect.all`
@@ -2711,7 +2863,9 @@ return {
 const [language, cfg, item, info] = yield* Effect.all([...], { concurrency: "unbounded" })
 ```
 
-路径：<details class="source-ref source-ref--inline">
+路径：`packages/opencode/src/session/llm.ts:99-107`
+
+<details class="source-ref source-ref--inline">
   <summary>
     <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
     <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:99-107</code></span>
@@ -2726,6 +2880,7 @@ const [language, cfg, item, info] = yield* Effect.all([...], { concurrency: "unb
 <span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">        { concurrency: &quot;unbounded&quot; },</span></span>
 <span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">      )</span></span></code></pre>
 </details>
+
 
 Java 类比 `CompletableFuture.allOf`，但 Effect 同时管理错误类型、依赖环境和中断。
 
@@ -2741,160 +2896,183 @@ Java 类比 `CompletableFuture.allOf`，但 Effect 同时管理错误类型、�
 
 ## 10. 它如何和 Tool、Provider、Session、文件系统协作
 
-- 和 Tool：LLM 层拿到的是 `tools: Record<string, Tool>`，并传给 `streamText` 的 `tools` 字段。来源：<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:204-225</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      const tools = resolveTools(input)</span></span>
-<span class="source-line"><span class="source-line-number">205</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      // GitHub Copilot may require the tools parameter when message history contains</span></span>
-<span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">      // tool calls but no tools are active (e.g. compaction). Inject a stub tool that</span></span>
-<span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">      // is never meant to be invoked. LiteLLM-backed providers are excluded.</span></span>
-<span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">      if (</span></span>
-<span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">        input.model.providerID.includes(&quot;github-copilot&quot;) &amp;&amp;</span></span>
-<span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">        Object.keys(tools).length === 0 &amp;&amp;</span></span>
-<span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">        hasToolCalls(input.messages)</span></span>
-<span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">      ) {</span></span>
-<span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">        tools[&quot;_noop&quot;] = aiTool({</span></span>
-<span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">          description: &quot;Do not call this tool. It exists only for API compatibility and must never be invoked.&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">          inputSchema: jsonSchema({</span></span>
-<span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">            type: &quot;object&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">            properties: {</span></span>
-<span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">              reason: { type: &quot;string&quot;, description: &quot;Unused&quot; },</span></span>
-<span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">            },</span></span>
-<span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">          }),</span></span>
-<span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">          execute: async () =&gt; ({ output: &quot;&quot;, title: &quot;&quot;, metadata: {} }),</span></span>
-<span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">        })</span></span>
-<span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">      }</span></span>
-<span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">      const sortedTools = Object.fromEntries(Object.entries(tools).toSorted(([a], [b]) =&gt; a.localeCompare(b)))</span></span></code></pre>
-</details>、<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:431-437</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">          temperature: params.temperature,</span></span>
-<span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">          topP: params.topP,</span></span>
-<span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">          topK: params.topK,</span></span>
-<span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">          providerOptions: ProviderTransform.providerOptions(input.model, params.options),</span></span>
-<span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">          activeTools: Object.keys(sortedTools).filter((x) =&gt; x !== &quot;invalid&quot;),</span></span>
-<span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">          tools: sortedTools,</span></span>
-<span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">          toolChoice: input.toolChoice,</span></span></code></pre>
-</details>。
-- 和 Provider：`provider.getLanguage(input.model)` 负责获取 AI SDK language model。来源：<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:99-107</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">      const [language, cfg, item, info] = yield* Effect.all(</span></span>
-<span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">        [</span></span>
-<span class="source-line"><span class="source-line-number">101</span><span class="source-line-text">          provider.getLanguage(input.model),</span></span>
-<span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">          config.get(),</span></span>
-<span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">          provider.getProvider(input.model.providerID),</span></span>
-<span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">          auth.get(input.model.providerID),</span></span>
-<span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">        ],</span></span>
-<span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">        { concurrency: &quot;unbounded&quot; },</span></span>
-<span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">      )</span></span></code></pre>
-</details>、<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1679-1703</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">1679</span><span class="source-line-text">    const getLanguage = Effect.fn(&quot;Provider.getLanguage&quot;)(function* (model: Model) {</span></span>
-<span class="source-line"><span class="source-line-number">1680</span><span class="source-line-text">      const s = yield* InstanceState.get(state)</span></span>
-<span class="source-line"><span class="source-line-number">1681</span><span class="source-line-text">      const envs = yield* env.all()</span></span>
-<span class="source-line"><span class="source-line-number">1682</span><span class="source-line-text">      const key = `${model.providerID}/${model.id}`</span></span>
-<span class="source-line"><span class="source-line-number">1683</span><span class="source-line-text">      if (s.models.has(key)) return s.models.get(key)!</span></span>
-<span class="source-line"><span class="source-line-number">1684</span><span class="source-line-text"></span></span>
-<span class="source-line"><span class="source-line-number">1685</span><span class="source-line-text">      const provider = s.providers[model.providerID]</span></span>
-<span class="source-line"><span class="source-line-number">1686</span><span class="source-line-text">      return yield* EffectPromise.refineRejection(</span></span>
-<span class="source-line"><span class="source-line-number">1687</span><span class="source-line-text">        async () =&gt; {</span></span>
-<span class="source-line"><span class="source-line-number">1688</span><span class="source-line-text">          const sdk = await resolveSDK(model, s, envs)</span></span>
-<span class="source-line"><span class="source-line-number">1689</span><span class="source-line-text">          const language = s.modelLoaders[model.providerID]</span></span>
-<span class="source-line"><span class="source-line-number">1690</span><span class="source-line-text">            ? await s.modelLoaders[model.providerID](sdk, model.api.id, {</span></span>
-<span class="source-line"><span class="source-line-number">1691</span><span class="source-line-text">                ...provider.options,</span></span>
-<span class="source-line"><span class="source-line-number">1692</span><span class="source-line-text">                ...model.options,</span></span>
-<span class="source-line"><span class="source-line-number">1693</span><span class="source-line-text">              })</span></span>
-<span class="source-line"><span class="source-line-number">1694</span><span class="source-line-text">            : sdk.languageModel(model.api.id)</span></span>
-<span class="source-line"><span class="source-line-number">1695</span><span class="source-line-text">          s.models.set(key, language)</span></span>
-<span class="source-line"><span class="source-line-number">1696</span><span class="source-line-text">          return language</span></span>
-<span class="source-line"><span class="source-line-number">1697</span><span class="source-line-text">        },</span></span>
-<span class="source-line"><span class="source-line-number">1698</span><span class="source-line-text">        (cause) =&gt;</span></span>
-<span class="source-line"><span class="source-line-number">1699</span><span class="source-line-text">          cause instanceof NoSuchModelError</span></span>
-<span class="source-line"><span class="source-line-number">1700</span><span class="source-line-text">            ? new ModelNotFoundError({ modelID: model.id, providerID: model.providerID, cause })</span></span>
-<span class="source-line"><span class="source-line-number">1701</span><span class="source-line-text">            : undefined,</span></span>
-<span class="source-line"><span class="source-line-number">1702</span><span class="source-line-text">      )</span></span>
-<span class="source-line"><span class="source-line-number">1703</span><span class="source-line-text">    })</span></span></code></pre>
-</details>。
-- 和 Session：`sessionID`、`parentSessionID` 被写进 headers 和 telemetry metadata，用来关联请求。来源：<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:334-350</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">334</span><span class="source-line-text">      const requestHeaders = {</span></span>
-<span class="source-line"><span class="source-line-number">335</span><span class="source-line-text">        ...(input.model.providerID.startsWith(&quot;opencode&quot;)</span></span>
-<span class="source-line"><span class="source-line-number">336</span><span class="source-line-text">          ? {</span></span>
-<span class="source-line"><span class="source-line-number">337</span><span class="source-line-text">              ...(opencodeProjectID ? { &quot;x-opencode-project&quot;: opencodeProjectID } : {}),</span></span>
-<span class="source-line"><span class="source-line-number">338</span><span class="source-line-text">              &quot;x-opencode-session&quot;: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">339</span><span class="source-line-text">              &quot;x-opencode-request&quot;: input.user.id,</span></span>
-<span class="source-line"><span class="source-line-number">340</span><span class="source-line-text">              &quot;x-opencode-client&quot;: flags.client,</span></span>
-<span class="source-line"><span class="source-line-number">341</span><span class="source-line-text">              &quot;User-Agent&quot;: `opencode/${InstallationVersion}`,</span></span>
-<span class="source-line"><span class="source-line-number">342</span><span class="source-line-text">            }</span></span>
-<span class="source-line"><span class="source-line-number">343</span><span class="source-line-text">          : {</span></span>
-<span class="source-line"><span class="source-line-number">344</span><span class="source-line-text">              &quot;x-session-affinity&quot;: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">345</span><span class="source-line-text">              ...(input.parentSessionID ? { &quot;x-parent-session-id&quot;: input.parentSessionID } : {}),</span></span>
-<span class="source-line"><span class="source-line-number">346</span><span class="source-line-text">              &quot;User-Agent&quot;: `opencode/${InstallationVersion}`,</span></span>
-<span class="source-line"><span class="source-line-number">347</span><span class="source-line-text">            }),</span></span>
-<span class="source-line"><span class="source-line-number">348</span><span class="source-line-text">        ...input.model.headers,</span></span>
-<span class="source-line"><span class="source-line-number">349</span><span class="source-line-text">        ...headers,</span></span>
-<span class="source-line"><span class="source-line-number">350</span><span class="source-line-text">      }</span></span></code></pre>
-</details>、<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:458-466</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">458</span><span class="source-line-text">          experimental_telemetry: {</span></span>
-<span class="source-line"><span class="source-line-number">459</span><span class="source-line-text">            isEnabled: cfg.experimental?.openTelemetry,</span></span>
-<span class="source-line"><span class="source-line-number">460</span><span class="source-line-text">            functionId: &quot;session.llm&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">461</span><span class="source-line-text">            tracer: telemetryTracer,</span></span>
-<span class="source-line"><span class="source-line-number">462</span><span class="source-line-text">            metadata: {</span></span>
-<span class="source-line"><span class="source-line-number">463</span><span class="source-line-text">              userId: cfg.username ?? &quot;unknown&quot;,</span></span>
-<span class="source-line"><span class="source-line-number">464</span><span class="source-line-text">              sessionId: input.sessionID,</span></span>
-<span class="source-line"><span class="source-line-number">465</span><span class="source-line-text">            },</span></span>
-<span class="source-line"><span class="source-line-number">466</span><span class="source-line-text">          },</span></span></code></pre>
-</details>。
-- 和权限：`resolveTools` 合并 agent/session permission，过滤 disabled tools。来源：<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:512-518</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">512</span><span class="source-line-text">function resolveTools(input: Pick&lt;StreamInput, &quot;tools&quot; | &quot;agent&quot; | &quot;permission&quot; | &quot;user&quot;&gt;) {</span></span>
-<span class="source-line"><span class="source-line-number">513</span><span class="source-line-text">  const disabled = Permission.disabled(</span></span>
-<span class="source-line"><span class="source-line-number">514</span><span class="source-line-text">    Object.keys(input.tools),</span></span>
-<span class="source-line"><span class="source-line-number">515</span><span class="source-line-text">    Permission.merge(input.agent.permission, input.permission ?? []),</span></span>
-<span class="source-line"><span class="source-line-number">516</span><span class="source-line-text">  )</span></span>
-<span class="source-line"><span class="source-line-number">517</span><span class="source-line-text">  return Record.filter(input.tools, (_, k) =&gt; input.user.tools?.[k] !== false &amp;&amp; !disabled.has(k))</span></span>
-<span class="source-line"><span class="source-line-number">518</span><span class="source-line-text">}</span></span></code></pre>
-</details>。
-- 和文件系统：本章的 LLM 层不直接读写文件；文件系统能力通过 tools 暴露给模型，例如 read/edit/write/shell。这个判断来自 `StreamInput.tools` 和 `streamText({ tools })`，不是来自文件工具源码。来源：<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:49</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  tools: Record&lt;string, Tool&gt;</span></span></code></pre>
-</details>、<details class="source-ref source-ref--inline">
-  <summary>
-    <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
-    <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:431-437</code></span>
-  </summary>
-  <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">          temperature: params.temperature,</span></span>
-<span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">          topP: params.topP,</span></span>
-<span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">          topK: params.topK,</span></span>
-<span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">          providerOptions: ProviderTransform.providerOptions(input.model, params.options),</span></span>
-<span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">          activeTools: Object.keys(sortedTools).filter((x) =&gt; x !== &quot;invalid&quot;),</span></span>
-<span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">          tools: sortedTools,</span></span>
-<span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">          toolChoice: input.toolChoice,</span></span></code></pre>
-</details>。
+- 和 Tool：LLM 层拿到的是 `tools: Record<string, Tool>`，并传给 `streamText` 的 `tools` 字段。来源：`packages/opencode/src/session/llm.ts:204-225`、`packages/opencode/src/session/llm.ts:431-437`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:204-225</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">204</span><span class="source-line-text">      const tools = resolveTools(input)</span></span>
+  <span class="source-line"><span class="source-line-number">205</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">206</span><span class="source-line-text">      // GitHub Copilot may require the tools parameter when message history contains</span></span>
+  <span class="source-line"><span class="source-line-number">207</span><span class="source-line-text">      // tool calls but no tools are active (e.g. compaction). Inject a stub tool that</span></span>
+  <span class="source-line"><span class="source-line-number">208</span><span class="source-line-text">      // is never meant to be invoked. LiteLLM-backed providers are excluded.</span></span>
+  <span class="source-line"><span class="source-line-number">209</span><span class="source-line-text">      if (</span></span>
+  <span class="source-line"><span class="source-line-number">210</span><span class="source-line-text">        input.model.providerID.includes(&quot;github-copilot&quot;) &amp;&amp;</span></span>
+  <span class="source-line"><span class="source-line-number">211</span><span class="source-line-text">        Object.keys(tools).length === 0 &amp;&amp;</span></span>
+  <span class="source-line"><span class="source-line-number">212</span><span class="source-line-text">        hasToolCalls(input.messages)</span></span>
+  <span class="source-line"><span class="source-line-number">213</span><span class="source-line-text">      ) {</span></span>
+  <span class="source-line"><span class="source-line-number">214</span><span class="source-line-text">        tools[&quot;_noop&quot;] = aiTool({</span></span>
+  <span class="source-line"><span class="source-line-number">215</span><span class="source-line-text">          description: &quot;Do not call this tool. It exists only for API compatibility and must never be invoked.&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">216</span><span class="source-line-text">          inputSchema: jsonSchema({</span></span>
+  <span class="source-line"><span class="source-line-number">217</span><span class="source-line-text">            type: &quot;object&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">218</span><span class="source-line-text">            properties: {</span></span>
+  <span class="source-line"><span class="source-line-number">219</span><span class="source-line-text">              reason: { type: &quot;string&quot;, description: &quot;Unused&quot; },</span></span>
+  <span class="source-line"><span class="source-line-number">220</span><span class="source-line-text">            },</span></span>
+  <span class="source-line"><span class="source-line-number">221</span><span class="source-line-text">          }),</span></span>
+  <span class="source-line"><span class="source-line-number">222</span><span class="source-line-text">          execute: async () =&gt; ({ output: &quot;&quot;, title: &quot;&quot;, metadata: {} }),</span></span>
+  <span class="source-line"><span class="source-line-number">223</span><span class="source-line-text">        })</span></span>
+  <span class="source-line"><span class="source-line-number">224</span><span class="source-line-text">      }</span></span>
+  <span class="source-line"><span class="source-line-number">225</span><span class="source-line-text">      const sortedTools = Object.fromEntries(Object.entries(tools).toSorted(([a], [b]) =&gt; a.localeCompare(b)))</span></span></code></pre>
+  </details>
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:431-437</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">          temperature: params.temperature,</span></span>
+  <span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">          topP: params.topP,</span></span>
+  <span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">          topK: params.topK,</span></span>
+  <span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">          providerOptions: ProviderTransform.providerOptions(input.model, params.options),</span></span>
+  <span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">          activeTools: Object.keys(sortedTools).filter((x) =&gt; x !== &quot;invalid&quot;),</span></span>
+  <span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">          tools: sortedTools,</span></span>
+  <span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">          toolChoice: input.toolChoice,</span></span></code></pre>
+  </details>
+
+- 和 Provider：`provider.getLanguage(input.model)` 负责获取 AI SDK language model。来源：`packages/opencode/src/session/llm.ts:99-107`、`packages/opencode/src/provider/provider.ts:1679-1703`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:99-107</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">99</span><span class="source-line-text">      const [language, cfg, item, info] = yield* Effect.all(</span></span>
+  <span class="source-line"><span class="source-line-number">100</span><span class="source-line-text">        [</span></span>
+  <span class="source-line"><span class="source-line-number">101</span><span class="source-line-text">          provider.getLanguage(input.model),</span></span>
+  <span class="source-line"><span class="source-line-number">102</span><span class="source-line-text">          config.get(),</span></span>
+  <span class="source-line"><span class="source-line-number">103</span><span class="source-line-text">          provider.getProvider(input.model.providerID),</span></span>
+  <span class="source-line"><span class="source-line-number">104</span><span class="source-line-text">          auth.get(input.model.providerID),</span></span>
+  <span class="source-line"><span class="source-line-number">105</span><span class="source-line-text">        ],</span></span>
+  <span class="source-line"><span class="source-line-number">106</span><span class="source-line-text">        { concurrency: &quot;unbounded&quot; },</span></span>
+  <span class="source-line"><span class="source-line-number">107</span><span class="source-line-text">      )</span></span></code></pre>
+  </details>
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/provider/provider.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/provider/provider.ts:1679-1703</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">1679</span><span class="source-line-text">    const getLanguage = Effect.fn(&quot;Provider.getLanguage&quot;)(function* (model: Model) {</span></span>
+  <span class="source-line"><span class="source-line-number">1680</span><span class="source-line-text">      const s = yield* InstanceState.get(state)</span></span>
+  <span class="source-line"><span class="source-line-number">1681</span><span class="source-line-text">      const envs = yield* env.all()</span></span>
+  <span class="source-line"><span class="source-line-number">1682</span><span class="source-line-text">      const key = `${model.providerID}/${model.id}`</span></span>
+  <span class="source-line"><span class="source-line-number">1683</span><span class="source-line-text">      if (s.models.has(key)) return s.models.get(key)!</span></span>
+  <span class="source-line"><span class="source-line-number">1684</span><span class="source-line-text"></span></span>
+  <span class="source-line"><span class="source-line-number">1685</span><span class="source-line-text">      const provider = s.providers[model.providerID]</span></span>
+  <span class="source-line"><span class="source-line-number">1686</span><span class="source-line-text">      return yield* EffectPromise.refineRejection(</span></span>
+  <span class="source-line"><span class="source-line-number">1687</span><span class="source-line-text">        async () =&gt; {</span></span>
+  <span class="source-line"><span class="source-line-number">1688</span><span class="source-line-text">          const sdk = await resolveSDK(model, s, envs)</span></span>
+  <span class="source-line"><span class="source-line-number">1689</span><span class="source-line-text">          const language = s.modelLoaders[model.providerID]</span></span>
+  <span class="source-line"><span class="source-line-number">1690</span><span class="source-line-text">            ? await s.modelLoaders[model.providerID](sdk, model.api.id, {</span></span>
+  <span class="source-line"><span class="source-line-number">1691</span><span class="source-line-text">                ...provider.options,</span></span>
+  <span class="source-line"><span class="source-line-number">1692</span><span class="source-line-text">                ...model.options,</span></span>
+  <span class="source-line"><span class="source-line-number">1693</span><span class="source-line-text">              })</span></span>
+  <span class="source-line"><span class="source-line-number">1694</span><span class="source-line-text">            : sdk.languageModel(model.api.id)</span></span>
+  <span class="source-line"><span class="source-line-number">1695</span><span class="source-line-text">          s.models.set(key, language)</span></span>
+  <span class="source-line"><span class="source-line-number">1696</span><span class="source-line-text">          return language</span></span>
+  <span class="source-line"><span class="source-line-number">1697</span><span class="source-line-text">        },</span></span>
+  <span class="source-line"><span class="source-line-number">1698</span><span class="source-line-text">        (cause) =&gt;</span></span>
+  <span class="source-line"><span class="source-line-number">1699</span><span class="source-line-text">          cause instanceof NoSuchModelError</span></span>
+  <span class="source-line"><span class="source-line-number">1700</span><span class="source-line-text">            ? new ModelNotFoundError({ modelID: model.id, providerID: model.providerID, cause })</span></span>
+  <span class="source-line"><span class="source-line-number">1701</span><span class="source-line-text">            : undefined,</span></span>
+  <span class="source-line"><span class="source-line-number">1702</span><span class="source-line-text">      )</span></span>
+  <span class="source-line"><span class="source-line-number">1703</span><span class="source-line-text">    })</span></span></code></pre>
+  </details>
+
+- 和 Session：`sessionID`、`parentSessionID` 被写进 headers 和 telemetry metadata，用来关联请求。来源：`packages/opencode/src/session/llm.ts:334-350`、`packages/opencode/src/session/llm.ts:458-466`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:334-350</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">334</span><span class="source-line-text">      const requestHeaders = {</span></span>
+  <span class="source-line"><span class="source-line-number">335</span><span class="source-line-text">        ...(input.model.providerID.startsWith(&quot;opencode&quot;)</span></span>
+  <span class="source-line"><span class="source-line-number">336</span><span class="source-line-text">          ? {</span></span>
+  <span class="source-line"><span class="source-line-number">337</span><span class="source-line-text">              ...(opencodeProjectID ? { &quot;x-opencode-project&quot;: opencodeProjectID } : {}),</span></span>
+  <span class="source-line"><span class="source-line-number">338</span><span class="source-line-text">              &quot;x-opencode-session&quot;: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">339</span><span class="source-line-text">              &quot;x-opencode-request&quot;: input.user.id,</span></span>
+  <span class="source-line"><span class="source-line-number">340</span><span class="source-line-text">              &quot;x-opencode-client&quot;: flags.client,</span></span>
+  <span class="source-line"><span class="source-line-number">341</span><span class="source-line-text">              &quot;User-Agent&quot;: `opencode/${InstallationVersion}`,</span></span>
+  <span class="source-line"><span class="source-line-number">342</span><span class="source-line-text">            }</span></span>
+  <span class="source-line"><span class="source-line-number">343</span><span class="source-line-text">          : {</span></span>
+  <span class="source-line"><span class="source-line-number">344</span><span class="source-line-text">              &quot;x-session-affinity&quot;: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">345</span><span class="source-line-text">              ...(input.parentSessionID ? { &quot;x-parent-session-id&quot;: input.parentSessionID } : {}),</span></span>
+  <span class="source-line"><span class="source-line-number">346</span><span class="source-line-text">              &quot;User-Agent&quot;: `opencode/${InstallationVersion}`,</span></span>
+  <span class="source-line"><span class="source-line-number">347</span><span class="source-line-text">            }),</span></span>
+  <span class="source-line"><span class="source-line-number">348</span><span class="source-line-text">        ...input.model.headers,</span></span>
+  <span class="source-line"><span class="source-line-number">349</span><span class="source-line-text">        ...headers,</span></span>
+  <span class="source-line"><span class="source-line-number">350</span><span class="source-line-text">      }</span></span></code></pre>
+  </details>
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:458-466</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">458</span><span class="source-line-text">          experimental_telemetry: {</span></span>
+  <span class="source-line"><span class="source-line-number">459</span><span class="source-line-text">            isEnabled: cfg.experimental?.openTelemetry,</span></span>
+  <span class="source-line"><span class="source-line-number">460</span><span class="source-line-text">            functionId: &quot;session.llm&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">461</span><span class="source-line-text">            tracer: telemetryTracer,</span></span>
+  <span class="source-line"><span class="source-line-number">462</span><span class="source-line-text">            metadata: {</span></span>
+  <span class="source-line"><span class="source-line-number">463</span><span class="source-line-text">              userId: cfg.username ?? &quot;unknown&quot;,</span></span>
+  <span class="source-line"><span class="source-line-number">464</span><span class="source-line-text">              sessionId: input.sessionID,</span></span>
+  <span class="source-line"><span class="source-line-number">465</span><span class="source-line-text">            },</span></span>
+  <span class="source-line"><span class="source-line-number">466</span><span class="source-line-text">          },</span></span></code></pre>
+  </details>
+
+- 和权限：`resolveTools` 合并 agent/session permission，过滤 disabled tools。来源：`packages/opencode/src/session/llm.ts:512-518`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:512-518</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">512</span><span class="source-line-text">function resolveTools(input: Pick&lt;StreamInput, &quot;tools&quot; | &quot;agent&quot; | &quot;permission&quot; | &quot;user&quot;&gt;) {</span></span>
+  <span class="source-line"><span class="source-line-number">513</span><span class="source-line-text">  const disabled = Permission.disabled(</span></span>
+  <span class="source-line"><span class="source-line-number">514</span><span class="source-line-text">    Object.keys(input.tools),</span></span>
+  <span class="source-line"><span class="source-line-number">515</span><span class="source-line-text">    Permission.merge(input.agent.permission, input.permission ?? []),</span></span>
+  <span class="source-line"><span class="source-line-number">516</span><span class="source-line-text">  )</span></span>
+  <span class="source-line"><span class="source-line-number">517</span><span class="source-line-text">  return Record.filter(input.tools, (_, k) =&gt; input.user.tools?.[k] !== false &amp;&amp; !disabled.has(k))</span></span>
+  <span class="source-line"><span class="source-line-number">518</span><span class="source-line-text">}</span></span></code></pre>
+  </details>
+
+- 和文件系统：本章的 LLM 层不直接读写文件；文件系统能力通过 tools 暴露给模型，例如 read/edit/write/shell。这个判断来自 `StreamInput.tools` 和 `streamText({ tools })`，不是来自文件工具源码。来源：`packages/opencode/src/session/llm.ts:49`、`packages/opencode/src/session/llm.ts:431-437`。
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:49</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">49</span><span class="source-line-text">  tools: Record&lt;string, Tool&gt;</span></span></code></pre>
+  </details>
+
+  <details class="source-ref source-ref--inline">
+    <summary>
+      <span class="source-ref-title">packages/opencode/src/session/llm.ts</span>
+      <span class="source-ref-path"><code>packages/opencode/src/session/llm.ts:431-437</code></span>
+    </summary>
+    <pre class="source-code" tabindex="0"><code><span class="source-line"><span class="source-line-number">431</span><span class="source-line-text">          temperature: params.temperature,</span></span>
+  <span class="source-line"><span class="source-line-number">432</span><span class="source-line-text">          topP: params.topP,</span></span>
+  <span class="source-line"><span class="source-line-number">433</span><span class="source-line-text">          topK: params.topK,</span></span>
+  <span class="source-line"><span class="source-line-number">434</span><span class="source-line-text">          providerOptions: ProviderTransform.providerOptions(input.model, params.options),</span></span>
+  <span class="source-line"><span class="source-line-number">435</span><span class="source-line-text">          activeTools: Object.keys(sortedTools).filter((x) =&gt; x !== &quot;invalid&quot;),</span></span>
+  <span class="source-line"><span class="source-line-number">436</span><span class="source-line-text">          tools: sortedTools,</span></span>
+  <span class="source-line"><span class="source-line-number">437</span><span class="source-line-text">          toolChoice: input.toolChoice,</span></span></code></pre>
+  </details>
+
 
 ## 11. 如果自己实现 mini agent，这一章对应什么代码
 

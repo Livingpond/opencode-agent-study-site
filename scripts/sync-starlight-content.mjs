@@ -110,6 +110,13 @@ async function renderSourceRef(attrs, variant = 'card') {
 </details>`;
 }
 
+function indentBlock(value, indent) {
+  return value
+    .split('\n')
+    .map((line) => (line ? `${indent}${line}` : line))
+    .join('\n');
+}
+
 async function expandSourceRefs(markdown) {
   const pattern = /<!--\s*source-ref\s+([\s\S]*?)\s*-->/g;
   let result = '';
@@ -127,40 +134,47 @@ async function expandInlineSourceRefs(markdown) {
   const warnings = [];
   const lines = markdown.split('\n');
   let inFence = false;
+  let inSourceRefHtml = false;
   const expanded = [];
 
   for (const line of lines) {
+    if (line.startsWith('<details class="source-ref')) inSourceRefHtml = true;
+
     if (/^\s*(```|~~~)/.test(line)) {
       inFence = !inFence;
       expanded.push(line);
       continue;
     }
 
-    if (inFence || line.includes('<!-- source-ref')) {
+    if (inFence || inSourceRefHtml || line.includes('<!-- source-ref')) {
       expanded.push(line);
+      if (line.trim() === '</details>') inSourceRefHtml = false;
       continue;
     }
 
-    let next = '';
-    let lastIndex = 0;
+    const sourceBlocks = [];
     for (const match of line.matchAll(/`([^`\n]+?)`/g)) {
       const ref = parseSourceLabel(match[1]);
       if (!ref) continue;
 
-      next += line.slice(lastIndex, match.index);
       try {
-        next += await renderSourceRef(ref, 'inline');
+        sourceBlocks.push(await renderSourceRef(ref, 'inline'));
       } catch (error) {
         warnings.push(`${ref.path}:${ref.lines} (${error.message})`);
-        next += match[0];
       }
-      lastIndex = match.index + match[0].length;
     }
 
-    if (lastIndex === 0) {
+    if (!sourceBlocks.length) {
       expanded.push(line);
     } else {
-      expanded.push(next + line.slice(lastIndex));
+      const listMatch = line.match(/^(\s*)(?:[-*+]|\d+[.)])\s+/);
+      const continuationIndent = listMatch ? `${listMatch[1]}  ` : '';
+      expanded.push(line);
+      expanded.push('');
+      for (const block of sourceBlocks) {
+        expanded.push(continuationIndent ? indentBlock(block, continuationIndent) : block);
+        expanded.push('');
+      }
     }
   }
 

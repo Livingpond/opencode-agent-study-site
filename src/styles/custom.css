@@ -82,10 +82,9 @@ body {
 }
 
 .source-ref--inline {
-  display: inline-block;
-  margin: 0.18rem 0.15rem;
+  display: block;
+  margin: 0.38rem 0 0.9rem;
   max-width: 100%;
-  vertical-align: middle;
 }
 
 .source-ref--inline[open] {
