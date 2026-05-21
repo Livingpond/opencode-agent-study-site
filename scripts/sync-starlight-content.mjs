@@ -88,7 +88,7 @@ async function sourceCodeHtml(sourcePath, sourceLines) {
       const number = start + index;
       return `<span class="source-line"><span class="source-line-number">${number}</span><span class="source-line-text">${escapeHtml(line)}</span></span>`;
     })
-    .join('\n');
+    .join('');
 }
 
 async function renderSourceRef(attrs, variant = 'card') {

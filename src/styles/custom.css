@@ -185,30 +185,36 @@ body {
   background: #101820;
   color: #edf7f2;
   font-size: 0.86rem;
-  line-height: 1.55;
+  line-height: 1.42;
 }
 
 .source-code code {
   display: block;
   min-width: max-content;
   padding: 0.75rem 0;
+  white-space: normal;
 }
 
 .source-line {
   display: grid;
   grid-template-columns: 4.25rem minmax(0, 1fr);
+  min-height: 1.42em;
+  line-height: 1.42;
 }
 
 .source-line-number {
   padding: 0 0.75rem 0 0.9rem;
   border-right: 1px solid rgba(255, 255, 255, 0.14);
   color: #7fa59a;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
   text-align: right;
   user-select: none;
 }
 
 .source-line-text {
   padding: 0 1rem;
+  line-height: inherit;
   white-space: pre;
 }
 
